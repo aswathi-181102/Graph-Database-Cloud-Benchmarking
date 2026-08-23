@@ -1,22 +1,8 @@
 """Load config/platforms.yaml and config/workloads.yaml.
 
-The one interesting thing in here is env var substitution. Credentials live in
-the environment and the YAML only holds ${VAR} references, which buys three
-things:
-
-  1. config/platforms.yaml is safe to commit, and the assignment explicitly
-     forbids committing connection URIs or passwords.
-  2. A platform with no credentials becomes "skipped: missing COGNODB_URI"
-     instead of a stack trace on connect, so a partial run is a normal outcome.
-     That matters because nobody reproducing this will have accounts on all
-     nine entries.
-  3. The set of platforms is data, not code. Adding a sixth engine is a YAML
-     block plus an adapter, with no changes to the runner.
-
-Empty is treated as missing on purpose. `COGNODB_URI=` in a .env file is what
-you get from copying .env.example and not filling it in, and treating that as
-"configured" would mean a confusing connection failure later instead of a clear
-skip now.
+Credentials are ${VAR} references resolved here, so the YAML is safe to commit and
+a missing variable becomes a skip rather than a crash on connect. Empty counts as
+missing, since that is what copying .env.example gives you.
 """
 
 import os
@@ -29,21 +15,15 @@ import yaml
 
 from graphbench import paths
 
-# ${VAR} is required. ${VAR:-fallback} is optional with a default. Same shape as
-# shell parameter expansion so it reads the way people expect, but deliberately
-# not passed through a shell.
+# ${VAR} required, ${VAR:-fallback} optional. Shell-shaped so it reads the way
+# people expect, but never passed through a shell.
 ENV_REF = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-(.*))?\}$")
 
 
 @dataclass(frozen=True)
 class Tier:
-    """Advertised resources. null means the vendor does not publish it.
-
-    Kept as declared data rather than probed, because for a managed free tier
-    the advertised spec is the only thing you can cite, and citing it is what
-    the assignment asks for. Where a value is None the README says "not
-    published" rather than guessing.
-    """
+    """Advertised resources. None means the vendor does not publish it, and the
+    README says so rather than guessing."""
 
     name: str = ""
     vcpu: float | None = None
@@ -70,7 +50,7 @@ class Platform:
     track: str
     tier: Tier
     connection: dict[str, Any] = field(default_factory=dict)
-    # Which ${VAR}s came back empty. Non-empty means this platform gets skipped.
+    # Non-empty means skip this platform.
     missing_env: tuple[str, ...] = ()
 
     @property
@@ -98,9 +78,8 @@ class Workloads:
     min_degree: int
 
     def __post_init__(self) -> None:
-        # Cheap invariants, checked once at load. A benchmark that runs for
-        # twenty minutes and then reports a p95 over 3 samples is worse than one
-        # that refuses to start.
+        # A run that takes twenty minutes and then reports a p95 over 3 samples is
+        # worse than one that refuses to start.
         if self.iterations < 100:
             raise ValueError(
                 f"iterations={self.iterations} is below the 100 the assignment asks for"
@@ -162,7 +141,7 @@ def load_platforms(path: Path | None = None) -> list[Platform]:
     ids = [p.id for p in out]
     dupes = {i for i in ids if ids.count(i) > 1}
     if dupes:
-        # Duplicate ids would silently overwrite each other's result files.
+        # They would overwrite each other's result files.
         raise ValueError(f"duplicate platform ids in config: {sorted(dupes)}")
     return out
 
