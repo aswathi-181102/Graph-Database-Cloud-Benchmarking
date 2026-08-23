@@ -1,0 +1,92 @@
+# Workload parameters. One file, applied identically to every platform.
+#
+# Nothing here is tuned per engine. The moment one platform gets a different
+# batch size or a different iteration count, the comparison is gone.
+
+load:
+  # 5,000 rows per round trip, as a starting point. The reasoning: too small and
+  # per-request overhead dominates so every engine looks equally slow, too large
+  # and a 256 MB engine either refuses the batch or spills, at which point the
+  # number measures the memory cap rather than ingest speed.
+  #
+  # 5,000 is a guess until `graphbench calibrate` has actually been run against
+  # the capped containers, and the measured sweep gets written into
+  # docs/CALIBRATION.md. If the sweep says otherwise, this value changes and the
+  # affected results get re-run. Not going to claim it was measured before it
+  # was.
+  #
+  # Whatever it ends up as, it is applied to every platform, including ones
+  # where a larger batch would be faster. Letting each engine use its own
+  # optimum would produce better numbers and a worse benchmark.
+  batch_size: 5000
+
+reads:
+  # The assignment asks for >=100 iterations per read workload. 100 measured,
+  # after 20 discarded warm-up iterations.
+  iterations: 100
+
+  # Warm-up exists to separate two different things: cold start cost, and steady
+  # state latency. Both are interesting, so both get reported, but mixing them
+  # into one average reports neither. Cold numbers come from the first iteration
+  # of the first workload and are tabled separately.
+  warmup: 20
+
+  # A query that touches no data at all. This is the whole answer to "CognoDB is
+  # a managed service on the internet and the capped engines are on loopback".
+  # RETURN 1 measures the driver, the protocol and the network with the graph
+  # engine contributing nothing, so subtracting it from a traversal number
+  # leaves the engine's own work. Without this the cloud/local comparison is
+  # just a speed test of my broadband.
+  baseline_query: true
+
+  # 1, 2 and 3 hops as required. Defined as the k-hop neighbourhood size, i.e.
+  # distinct nodes within 1..k hops of the start node excluding itself, and NOT
+  # as "nodes at exactly depth k".
+  #
+  # That definition was chosen for cross-engine comparability. Cypher's variable
+  # length patterns use relationship uniqueness while ArangoDB's traversal uses
+  # vertex uniqueness, so an exact-depth query returns genuinely different sets
+  # on the two engines and the counts would not match. The 1..k neighbourhood is
+  # the one definition both express exactly. It has the useful side effect of
+  # being monotonic, so 1-hop <= 2-hop <= 3-hop acts as a free correctness check
+  # on every platform.
+  hops: [1, 2, 3]
+
+  # Per-query ceiling. A 3-hop expansion on a 256 MB instance can hang for
+  # minutes or die, and a run that stalls for an hour produces no data at all.
+  # Timeouts are recorded as failed iterations and reported, never silently
+  # dropped or retried, since "how often does it time out" is itself a result.
+  timeout_s: 30
+
+mixed:
+  # Concurrency sweep rather than a single number, so the shape is visible: an
+  # engine that is fastest at 1 client and collapses at 40 is a different
+  # product from one that scales flat, and a single figure hides that.
+  # 40 clients against 0.5 vCPU is deliberate overload, and it should look like
+  # overload.
+  concurrency: [1, 10, 40]
+
+  # 30 seconds per concurrency level. Long enough to get past JIT, cache fill
+  # and connection pool ramp, short enough that the write side does not grow the
+  # store past a 1 GB disk. 4 platforms x 3 levels x 30s is about 6 minutes of
+  # pure mixed workload, which is a reasonable total run time.
+  duration_s: 30
+
+  # 90/10 read/write. Graph workloads in the AI-agent shape CognoDB targets are
+  # read dominated: an agent reads its context graph constantly and appends to
+  # it occasionally. A 50/50 split would be a more stressful test and a less
+  # representative one.
+  read_ratio: 0.9
+
+  # Writes are tagged with the run id and deleted afterwards, so a mixed run
+  # does not leave the graph in a different state for the next platform, and so
+  # a crashed run can be cleaned up by tag.
+  cleanup_writes: true
+
+lookups:
+  # The filtered lookup targets one cohort plus a degree floor, so it is a real
+  # two predicate query against an index rather than a full scan dressed up as a
+  # lookup. min_degree 10 sits just under the mean degree of 21, which keeps the
+  # selectivity meaningful instead of matching everything or nothing.
+  cohort: 7
+  min_degree: 10
