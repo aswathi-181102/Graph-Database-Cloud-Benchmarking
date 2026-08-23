@@ -1,39 +1,13 @@
 """ArangoDB, the only non-Cypher engine in the set.
 
-It is here because it is architecturally the odd one out, and that is the point:
-ArangoDB is a document store that reconstructs adjacency through global indexes
-rather than storing pointers between neighbours. If native adjacency actually
-matters for multi-hop traversal, this is the engine where it should show.
+It is here because it is the architectural odd one out: a document store that
+rebuilds adjacency from global indexes rather than storing pointers between
+neighbours. If native adjacency matters for multi-hop traversal, this is where it
+should show.
 
-Being non-Cypher means the queries are hand-written in AQL rather than shared,
-which is the weakest link in the fairness argument, so it is worth being precise
-about what "the same logical query" means here.
-
-  Traversal semantics. Cypher's variable-length pattern uses relationship
-  uniqueness (a path cannot reuse an edge, but may revisit a node). ArangoDB's
-  traversal defaults to path uniqueness. Left alone, the two return genuinely
-  different sets and the counts would not match. The fix is
-  OPTIONS {uniqueVertices: 'global', order: 'bfs'}, which makes ArangoDB return
-  exactly the set of vertices reachable within k hops, which is what the Cypher
-  query's count(DISTINCT b) reduces to. That is semantic alignment, not tuning:
-  without it the two engines answer different questions. The runner cross-checks
-  the counts across platforms, so if this reasoning were wrong it would show up
-  as a mismatch rather than as a fast wrong answer.
-
-  Edge loading. Cypher engines have to look up both endpoints by an indexed
-  property to create a relationship. ArangoDB addresses documents by primary key,
-  so `_from` and `_to` can be built as strings client-side and no lookup happens
-  at all. That is a real advantage for ArangoDB on the ingest phase and it is not
-  normalised away, because it is not a trick, it is what the data model buys. It
-  is called out next to the ingest numbers.
-
-  Insert path. AQL `FOR doc IN @rows INSERT doc` is used rather than the
-  `import_bulk` HTTP endpoint. import_bulk would almost certainly be faster, but
-  batch INSERT is the direct analogue of Cypher's UNWIND ... CREATE: same batch
-  size, same number of round trips, same server-side loop. Using each engine's
-  fastest proprietary loader would answer a different and less comparable
-  question. Noted as a caveat since it does understate ArangoDB's real ingest
-  ceiling.
+Non-Cypher means the queries are hand written, which is the weakest link in the
+fairness argument, so the three places it differs are documented at the point of
+difference below and in docs/DECISIONS.md sections 4 and 5.
 """
 
 import threading
@@ -67,8 +41,8 @@ class ArangoAdapter(Adapter):
         self._build_queries()
 
     def _db(self):
-        """Thread-local client. python-arango wraps a requests Session, which is
-        not safe to share across the 40 threads the mixed workload spins up."""
+        """Thread-local: python-arango wraps a requests Session, not safe to share
+        across 40 threads."""
         db = getattr(self._local, "db", None)
         if db is None:
             client = ArangoClient(hosts=self._url, request_timeout=self.workloads.timeout_s + 30)
@@ -90,8 +64,9 @@ class ArangoAdapter(Adapter):
     def _build_queries(self) -> None:
         self.q_noop = "RETURN 1"
 
-        # order: 'bfs' is required for uniqueVertices: 'global'. See the module
-        # docstring for why global uniqueness is what makes this match Cypher.
+        # uniqueVertices: 'global' (which requires order: 'bfs') is what makes this
+        # return the same set Cypher's count(DISTINCT b) does. Semantic alignment,
+        # not tuning: without it the two engines answer different questions.
         self.q_khop = {
             k: (
                 f"FOR v IN 1..{k} ANY @start {EDGES} "
@@ -101,10 +76,8 @@ class ArangoAdapter(Adapter):
             for k in self.workloads.hops
         }
 
-        # Filter on the `key` attribute, not on _key, even though _key holds the
-        # node id and would be a free primary-index hit. Using the primary index
-        # here would be a genuinely unfair advantage: every other engine is doing
-        # a secondary index lookup on a string property, so ArangoDB does too.
+        # Filters `key`, not _key. _key would be a free primary-index hit, and
+        # every other engine is doing a secondary index lookup on a string.
         self.q_point = f"FOR a IN {NODES} FILTER a.key == @key LIMIT 1 RETURN a.degree"
 
         self.q_filtered = (
@@ -113,9 +86,7 @@ class ArangoAdapter(Adapter):
         )
         self.q_agg_cohorts = f"FOR a IN {NODES} COLLECT c = a.cohort WITH COUNT INTO n RETURN n"
 
-        # COLLECT WITH COUNT rather than LENGTH(coauthor). LENGTH on a collection
-        # is an O(1) metadata read and would not be measuring the same thing as a
-        # scan on the engines that have to do one.
+        # Not LENGTH(coauthor): that is an O(1) metadata read, not a scan.
         self.q_agg_rels = f"FOR e IN {EDGES} COLLECT WITH COUNT INTO n RETURN n"
 
         self.q_insert_nodes = (
@@ -127,11 +98,9 @@ class ArangoAdapter(Adapter):
             f"_to: CONCAT('{NODES}/', TO_STRING(row.dst))}} INTO {EDGES}"
         )
 
-        # One query, two INSERTs, so the mixed workload costs ArangoDB the same
-        # single round trip it costs the Cypher engines. Two separate statements
-        # would have doubled its network cost and made the throughput comparison
-        # meaningless. Validated against 3.12; if a server rejects multiple
-        # modifications the adapter falls back and records that it did.
+        # One query, two INSERTs, so this costs the same single round trip the
+        # Cypher engines pay. Two statements would double its network cost and wreck
+        # the throughput comparison. Falls back and records it if a server refuses.
         self.q_write = (
             f"LET target = FIRST(FOR a IN {NODES} FILTER a.key == @key LIMIT 1 RETURN a._id) "
             f"LET node = FIRST(INSERT {{_key: @bkey, tag: @tag}} INTO {BENCH_NODES} RETURN NEW) "
@@ -173,9 +142,8 @@ class ArangoAdapter(Adapter):
         return f"ArangoDB {db.version()}"
 
     def wipe(self) -> None:
-        # truncate, not a delete loop. Not measured (it runs before the timer),
-        # and a 198k-document AQL REMOVE inside a 256 MB instance would be a
-        # test of the transaction size limit rather than a cleanup.
+        # truncate, not an AQL REMOVE loop: 198k documents in one transaction inside
+        # 256 MB tests the transaction size limit, not the cleanup. Never measured.
         db = self._db()
         for name in (EDGES, NODES, BENCH_EDGES, BENCH_NODES):
             if db.has_collection(name):
@@ -200,10 +168,8 @@ class ArangoAdapter(Adapter):
             except Exception as exc:  # noqa: BLE001
                 failures.append(f"{description} on {collection} failed: {exc}")
 
-        # No index on id is created, and that is deliberate rather than an
-        # oversight: the edge loader addresses documents by _key, which the
-        # primary index already covers. The Cypher engines need an explicit index
-        # on id for the same job. Recorded so the difference is visible.
+        # No id index on purpose: the edge loader addresses documents by _key, which
+        # the primary index covers. The Cypher engines need one for the same job.
         created.append("NOTE: no secondary index on id, edge load uses _key via the primary index")
         return created + failures
 
@@ -218,12 +184,9 @@ class ArangoAdapter(Adapter):
         return int(self.run(self.q_noop)[0])
 
     def k_hop(self, key: str, k: int) -> int:
-        # AQL traversals start from a document id, and our _key is the numeric
-        # node id, so the id is reconstructed from the key rather than looked up.
-        # That saves a round trip the Cypher engines do not make either, since
-        # they bind the key straight into the pattern.
-        # key[1:] not lstrip(prefix): lstrip takes a character set and would
-        # happily eat more than the one-character prefix.
+        # Traversals start from a document id, so it is rebuilt from the key rather
+        # than looked up. No round trip either way, same as Cypher binding the key
+        # into the pattern. key[1:] not lstrip(): lstrip takes a character set.
         start = f"{NODES}/{key[1:]}"
         rows = self.run(self.q_khop[k], {"start": start})
         return int(rows[0]) if rows else 0
@@ -255,9 +218,7 @@ class ArangoAdapter(Adapter):
             except Exception as exc:  # noqa: BLE001
                 if "multiple" not in str(exc).lower() and "modification" not in str(exc).lower():
                     raise
-                # Server refuses two modifications in one query. Latch the
-                # fallback so we do not pay for the failed attempt on every
-                # subsequent write, and remember it for the results file.
+                # Latch it, so we do not pay for the failed attempt on every write.
                 self._write_needs_fallback = True
 
         node_id = self.run(self.q_write_fallback_node, params)[0]
@@ -276,7 +237,7 @@ class ArangoAdapter(Adapter):
         return n
 
     def footprint(self) -> dict[str, Any]:
-        """ArangoDB exposes real stored-size figures, which most engines here do not."""
+        """One of the few engines here that reports real stored-size figures."""
         try:
             db = self._db()
             out: dict[str, Any] = {"observable": True, "source": "collection figures()"}

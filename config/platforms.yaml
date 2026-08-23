@@ -1,89 +1,15 @@
-# Platforms under test.
+# Platforms under test. No secrets: every credential is an ${ENV_VAR} reference
+# resolved at load time, so a missing variable is a skip, not a leak or a crash.
 #
-# No secrets in here. Every credential is an ${ENV_VAR} reference resolved at
-# load time, so this file is safe to commit and a missing variable turns into
-# "skipped, no credentials" rather than a crash or a leak.
+# Why these five comparators, what was rejected, and why there are two tracks:
+# docs/DECISIONS.md sections 1 and 2.
 #
-# ---------------------------------------------------------------------------
-# Why these five comparators
-# ---------------------------------------------------------------------------
-# CognoDB is not a general purpose enterprise graph database, it is a context
-# graph for AI agents: tiny isolated instances per session, Bolt + Cypher, disk
-# backed with aggressive caching, roughly 80 bytes per edge, explicitly designed
-# to survive small memory limits. So the comparison set is chosen along the
-# architectural axes that would actually explain a latency difference against
-# that design, not just "five other graph databases".
-#
-#   neo4j      Native graph, disk backed, JVM. The reference implementation of
-#              Cypher and Bolt, and the thing CognoDB claims driver level
-#              compatibility with. Without it there is no baseline at all.
-#
-#   memgraph   Native graph, in memory, C++. CognoDB's own site claims Memgraph
-#              crashed under a 256 MB cap. That is a testable claim and this is
-#              exactly the envelope to test it in.
-#
-#   arangodb   Non native graph on RocksDB, multi model. Named in the same
-#              claim, and it is the only engine here that reconstructs adjacency
-#              through global indexes instead of storing pointers, which is the
-#              single biggest architectural difference in the set.
-#
-#   falkordb   Cypher over a sparse matrix / GraphBLAS engine on a Redis core.
-#              Different execution model again (linear algebra, not pointer
-#              chasing) and it markets itself at the same GraphRAG / AI agent
-#              use case, so it is a direct rival rather than a bystander.
-#
-#   kuzu       Embedded, columnar, no server process. Architecturally the
-#              closest thing to "one small isolated instance per agent". Carries
-#              an asterisk: being in process it has no network round trip, so it
-#              is reported as a reference floor rather than ranked against the
-#              server engines. Its value is that it separates protocol overhead
-#              from real graph work.
-#
-# Considered and rejected, so the omissions are on the record:
-#
-#   Amazon Neptune   No free tier of any kind. Cannot be resource matched
-#                    against a 256 MB instance without paying for a t3/t4g and
-#                    then deliberately handicapping it, which is worse science
-#                    than leaving it out.
-#   NebulaGraph      Needs metad + storaged + graphd as separate processes. The
-#                    three of them do not fit in 256 MB together, so any result
-#                    would be measuring the cap, not Nebula.
-#   JanusGraph       JVM plus a separate storage backend (Cassandra or
-#                    BerkeleyDB). Same problem as Nebula, worse.
-#   TigerGraph       GSQL rather than Cypher, tuned for OLAP fan out, and the
-#                    free tier ships considerably more RAM than 256 MB. Would
-#                    have needed either an unfair tier or a rewritten workload.
-#   Dgraph           Not Cypher, and the free cloud tier is gone.
-#
-# ---------------------------------------------------------------------------
-# Why there are two tracks
-# ---------------------------------------------------------------------------
-# The assignment says every database must run on the same resources, and warns
-# that comparing unequal tiers is a methodology error. The problem is that free
-# cloud tiers are not equal to each other: Aura Free, Memgraph Cloud and an
-# ArangoGraph trial all ship different CPU and RAM, and none of them let you
-# dial down to 0.5 vCPU / 256 MB to match CognoDB.
-#
-# Pretending otherwise would be exactly the error being warned about, so the
-# suite runs two tracks and never mixes them in one ranking:
-#
-#   track: local   Docker containers, every one capped to the same
-#                  --cpus=0.5 --memory=256m as CognoDB's c0, on one client
-#                  machine, no network. This is the resource fair comparison
-#                  and it is the primary result.
-#
-#   track: cloud   Managed free tiers as they actually ship, specs recorded as
-#                  advertised. Not resource equal, and labelled as such. Kept
-#                  because "what do you actually get from the free tier you
-#                  would really sign up for" is a genuine question, and because
-#                  CognoDB itself only exists as a managed service.
-#
-# CognoDB appears only in the cloud track, since there is no self hosted build
-# of it to cap. That is the one unavoidable asymmetry in the whole study and it
-# is stated plainly in the README rather than buried.
+# Short version: track "local" is Docker with every engine capped to CognoDB's
+# 0.5 vCPU / 256 MB, and that is the resource-fair comparison. Track "cloud" is
+# managed free tiers as they actually ship, which are not equal to each other and
+# are labelled as such. Track "reference" is Kuzu, embedded, not ranked.
 
 defaults:
-  # Same graph everywhere. Changing this per platform would defeat the point.
   dataset: ca-astroph
 
 platforms:
@@ -98,17 +24,15 @@ platforms:
       vcpu: 0.5
       ram_mb: 256
       disk_gb: 1
-      # Burstable, which matters: a 100 iteration read loop can drain a CPU
-      # credit balance and the tail latency then reflects throttling, not the
-      # engine. Called out in the caveats section of the README.
+      # Burstable matters: a 100-iteration read loop can drain a CPU credit
+      # balance, and the tail latency then reflects throttling, not the engine.
       burstable: true
       source: https://cognodb.com/pricing
     connection:
       uri: ${COGNODB_URI}
       user: ${COGNODB_USER:-cognodb}
       password: ${COGNODB_PASSWORD}
-      # Bolt compatible engines that are not Neo4j reject the database
-      # parameter, so it stays unset unless a platform needs it.
+      # Bolt engines that are not Neo4j reject the database parameter.
       database: ${COGNODB_DATABASE:-}
 
   - id: neo4j-aura
@@ -118,14 +42,13 @@ platforms:
     track: cloud
     tier:
       name: AuraDB Free
-      vcpu: null          # not published by the vendor
-      ram_mb: 1024        # advertised, and 4x CognoDB's, hence the two tracks
+      vcpu: null          # not published
+      ram_mb: 1024        # advertised, 4x CognoDB's, hence the two tracks
       disk_gb: 2
       burstable: true
       notes: >
         Also capped at 200k nodes / 400k relationships. ca-AstroPh fits, but a
-        larger dataset would have been rejected by the tier rather than by the
-        hardware.
+        larger dataset would have been refused by the tier, not the hardware.
       source: https://neo4j.com/pricing/
     connection:
       uri: ${NEO4J_AURA_URI}
@@ -185,8 +108,7 @@ platforms:
       password: ${FALKORDB_CLOUD_PASSWORD}
 
   # ---------------------------------------------------------------- local ----
-  # All four are pinned to identical caps in docker-compose.yml. Image tags are
-  # pinned too: "latest" would make a rerun in three months incomparable.
+  # Caps and pinned image tags live in docker-compose.yml.
   - id: neo4j-local
     display: Neo4j 5 Community (capped)
     engine: neo4j
@@ -255,9 +177,8 @@ platforms:
       password: ${LOCAL_FALKORDB_PASSWORD:-}
 
   # ------------------------------------------------------------ reference ----
-  # Not ranked with the others. In process, so no Bolt round trip, which is
-  # precisely why it is useful: the gap between this and the Bolt engines is the
-  # protocol and network cost rather than the graph engine cost.
+  # In-process, so no Bolt round trip. Not ranked with the others; the gap between
+  # this and the Bolt engines is protocol cost rather than engine cost.
   - id: kuzu-embedded
     display: Kuzu (embedded, reference only)
     engine: kuzu
@@ -265,7 +186,7 @@ platforms:
     track: reference
     tier:
       name: in-process, 256 MB buffer pool, 1 thread
-      vcpu: null          # cannot cap CPU on an in process library
+      vcpu: null          # cannot cap CPU on an in-process library
       ram_mb: 256         # enforced via buffer_pool_size
       disk_gb: 1
       source: graphbench/adapters/kuzu.py

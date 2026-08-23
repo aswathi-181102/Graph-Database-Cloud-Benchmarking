@@ -1,19 +1,9 @@
-"""FalkorDB.
+"""FalkorDB. Cypher, but over RESP rather than Bolt, so it needs its own transport.
 
-Speaks Cypher, so it inherits the whole workload from CypherAdapter, but not
-Bolt: queries go over RESP as `GRAPH.QUERY`, which is why it needs its own
-transport rather than sitting under BoltAdapter.
-
-That transport difference is worth keeping in mind when reading its numbers.
-RESP is a lighter protocol than Bolt, so part of any latency advantage FalkorDB
-shows is protocol rather than engine. The RETURN 1 baseline workload exists
-precisely to quantify that, and the analysis subtracts it before comparing
-traversal costs.
-
-The engine itself is the real reason it is in the comparison: FalkorDB evaluates
-graph queries as sparse matrix operations (GraphBLAS) instead of chasing
-pointers, so it should behave differently from Neo4j and Memgraph on exactly the
-workload that discriminates between them, which is multi-hop expansion.
+RESP is a lighter protocol than Bolt, so part of any latency advantage here is
+protocol rather than engine, which is what the RETURN 1 baseline is for. The
+engine itself evaluates queries as sparse matrix operations (GraphBLAS) instead of
+chasing pointers, which is why it is in the comparison.
 """
 
 import threading
@@ -31,9 +21,7 @@ GRAPH_KEY = "graphbench"
 def _decode_module_version(packed: str) -> str:
     """Redis modules report a packed int, e.g. 42004 for 4.20.4.
 
-    Decoded because "FalkorDB module 42004" in a results table looks like a build
-    number nobody can check against a release, and the whole point of recording
-    versions is that a reader can go and get the same one.
+    Decoded so a reader can match the results table against an actual release.
     """
     try:
         n = int(packed)
@@ -62,12 +50,8 @@ class FalkorDBAdapter(CypherAdapter):
         self.build_queries()
 
     def _graph(self):
-        """Thread-local client.
-
-        The redis client is thread-safe via its pool, but FalkorDB's Graph object
-        holds per-connection query state, so each worker thread gets its own.
-        Same reasoning as the Bolt sessions.
-        """
+        """Thread-local: the redis client is pool-safe but Graph holds per-connection
+        query state."""
         graph = getattr(self._local, "graph", None)
         if graph is None:
             db = FalkorDB(**self._client_args)
@@ -108,10 +92,8 @@ class FalkorDBAdapter(CypherAdapter):
         return f"FalkorDB module {_decode_module_version(version)} on Redis {redis_version}"
 
     def wipe(self) -> None:
-        # FalkorDB can drop the whole graph key in one call, which is much faster
-        # than the portable batched DETACH DELETE the Cypher base class uses.
-        # Using it here is not an unfair advantage because wipe() is not measured:
-        # it runs before the timer starts, and the load phases are what get timed.
+        # Drops the whole graph key in one call. Not an unfair advantage: wipe runs
+        # before the timer starts and is never measured.
         try:
             self._graph().delete()
         except Exception:  # noqa: BLE001
@@ -127,10 +109,16 @@ class FalkorDBAdapter(CypherAdapter):
         wanted = [
             ("key", f"CREATE INDEX FOR (a:{label}) ON (a.key)"),
             ("id (edge load path)", f"CREATE INDEX FOR (a:{label}) ON (a.id)"),
-            # FalkorDB takes a multi-property index in one statement, which is
-            # closer to Neo4j's composite than Memgraph's single-property only.
-            ("composite (cohort, degree)", f"CREATE INDEX FOR (a:{label}) ON (a.cohort, a.degree)"),
-            ("bench tag (mixed workload cleanup)", f"CREATE INDEX FOR (b:{BENCH_LABEL}) ON (b.tag)"),
+            # Multi-property index in one statement, closer to Neo4j's composite
+            # than Memgraph's single-property-only.
+            (
+                "composite (cohort, degree)",
+                f"CREATE INDEX FOR (a:{label}) ON (a.cohort, a.degree)",
+            ),
+            (
+                "bench tag (mixed workload cleanup)",
+                f"CREATE INDEX FOR (b:{BENCH_LABEL}) ON (b.tag)",
+            ),
         ]
         created = []
         for description, stmt in wanted:
@@ -143,11 +131,9 @@ class FalkorDBAdapter(CypherAdapter):
                 else:
                     self.index_failures.append(f"{description} failed: {exc}")
 
-        # No unique constraint. FalkorDB's uniqueness enforcement is a separate
-        # GRAPH.CONSTRAINT command that is not available on every build, so the
-        # key index here is non-unique. That means FalkorDB is doing slightly
-        # less work than Neo4j on the node-insert phase, and its ingest number
-        # should be read with that in mind.
+        # No unique constraint: FalkorDB's enforcement is a separate
+        # GRAPH.CONSTRAINT command not available on every build. So it does slightly
+        # less work than Neo4j on the node phase.
         created.append("NOTE: no unique constraint on key, index only")
         return created + self.index_failures
 

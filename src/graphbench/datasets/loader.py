@@ -1,17 +1,8 @@
 """Read side of the prepared dataset. Adapters use this, nothing else.
 
-Two deliberate choices here.
-
-Batches are yielded, not returned as one list. Not for ca-AstroPh's sake, where
-198k rows would fit in memory fine, but because the ingest metric is
-nodes/second and relationships/second: the loader has to be able to hand an
-engine one batch at a time so the timer measures the database accepting writes
-rather than Python building a list first.
-
-Types are cast here, once, rather than in each adapter. If one adapter passed
-`degree` as a string and another as an int, the filtered-lookup query would be
-doing string comparison on one platform and integer comparison on another, and
-the resulting latency gap would look like an engine difference.
+Batches are yielded rather than returned whole so the ingest timer measures the
+engine accepting writes, not Python building a list. Types are cast here once, so
+no adapter can end up comparing a string `degree` against an int one.
 """
 
 import csv
@@ -83,9 +74,7 @@ def load(dataset: str) -> PreparedGraph:
     directory = paths.PREPARED_DIR / dataset
     manifest_file = directory / "manifest.json"
     if not manifest_file.exists():
-        # Explicit instruction instead of a bare FileNotFoundError, because this
-        # is the single most likely first-run mistake for anyone reproducing the
-        # benchmark from the README.
+        # Most likely first-run mistake, so say what to do about it.
         raise FileNotFoundError(
             f"{dataset} is not prepared yet, run: graphbench dataset prepare --dataset {dataset}"
         )

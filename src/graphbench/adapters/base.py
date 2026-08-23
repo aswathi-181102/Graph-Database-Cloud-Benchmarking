@@ -1,25 +1,8 @@
 """The contract every engine implements.
 
-The whole fairness argument of this benchmark rests on this file. There is one
-definition of each workload and each engine only supplies its own dialect of it,
-so it is structurally impossible for one platform to be running a subtly
-different query than another. If the interface had been "each adapter has a
-run_benchmark method" the engines would have drifted apart within a day.
-
-Two design decisions worth defending:
-
-Every read operation returns an int, not rows. Partly because materialising rows
-would measure Python object construction, but mostly because it makes the
-results checkable: 2-hop from a given start key must return the same count on
-all five platforms. The runner compares them and flags disagreement. Without
-that, a query that is accidentally cheaper on one engine (say, because a
-direction was dropped) would look like a performance win.
-
-load() is a template method, not abstract. The sequence is wipe, load nodes,
-create indexes, load edges, and it is identical everywhere. Only the batch
-insert and the DDL are engine specific. Letting each adapter own the sequence
-would have allowed a platform to, for example, build indexes after the edges and
-post a better ingest number.
+Read ops return ints so results are comparable across platforms, not just
+timeable. load() is a template method so no adapter can reorder the phases.
+See docs/DECISIONS.md#5.
 """
 
 import time
@@ -47,12 +30,10 @@ class LoadPhase:
 
 @dataclass
 class LoadStats:
-    """Ingest result, broken into phases rather than one wall-clock number.
+    """Ingest result split by phase.
 
-    The assignment asks for nodes/second, relationships/second and total wall
-    clock. Splitting them out is what makes the total honest: index build time is
-    real time spent loading, so it belongs in the total, but folding it into the
-    node rate would flatter engines that build indexes lazily.
+    Index build time is real load time so it counts toward the total, but folding
+    it into the node rate would flatter engines that build indexes lazily.
     """
 
     method: str
@@ -108,10 +89,8 @@ def _round(v: float | None) -> float | None:
 class Adapter(ABC):
     """One graph engine, driven through one fixed set of operations."""
 
-    # Set by subclasses. load_method is reported verbatim in the README because
-    # the assignment asks how the data got in, and "driver batching" versus "bulk
-    # importer" is a big enough difference to change the ingest number by an
-    # order of magnitude.
+    # load_method is reported verbatim: driver batching vs a bulk importer can
+    # change the ingest number by an order of magnitude.
     engine: ClassVar[str] = ""
     dialect: ClassVar[str] = ""
     load_method: ClassVar[str] = ""
@@ -140,13 +119,11 @@ class Adapter(ABC):
 
     @abstractmethod
     def create_indexes(self) -> list[str]:
-        """Create the index set and return human-readable descriptions of it.
+        """Create the index set, returning descriptions of what was actually made.
 
-        Descriptions go straight into the README, because "which properties are
-        indexed on each platform" is a required deliverable and the engines
-        genuinely differ in what they support. An engine that cannot do a
-        composite index is at a real disadvantage on the filtered lookup, and
-        that should be visible rather than smoothed over.
+        Goes into the README: the engines differ in what they support, and an
+        engine with no composite index is at a real disadvantage on the filtered
+        lookup.
         """
 
     # -------------------------------------------------------------- ingest --
@@ -157,15 +134,7 @@ class Adapter(ABC):
     def insert_edge_batch(self, rows: list[dict]) -> None: ...
 
     def load(self) -> LoadStats:
-        """wipe -> nodes -> indexes -> edges, timed per phase.
-
-        Indexes are built between the two data phases on purpose. Before the
-        nodes, a unique constraint would slow every node insert and the node rate
-        would partly be measuring index maintenance. After the edges, the edge
-        phase would have to find endpoints by full scan and would take minutes on
-        every engine. Between them is both the fastest and the most realistic
-        order, and more importantly it is the same order everywhere.
-        """
+        """wipe -> nodes -> indexes -> edges, timed per phase."""
         stats = LoadStats(method=self.load_method, batch_size=self.workloads.batch_size)
         self.wipe()
 
@@ -199,9 +168,8 @@ class Adapter(ABC):
                 insert_fn(batch)
                 rows += len(batch)
             except Exception as exc:  # noqa: BLE001
-                # Keep going and count it. A partial load is a legitimate result
-                # at 256 MB and is far more informative than a traceback: it tells
-                # us how many rows in the engine gave up.
+                # Count it and keep going: a partial load is a legitimate result
+                # at 256 MB, and it tells us how many rows in the engine gave up.
                 errors.append(f"batch {batches}: {type(exc).__name__}: {exc}")
             batches += 1
         return LoadPhase(name, rows=rows, batches=batches,
@@ -226,11 +194,7 @@ class Adapter(ABC):
 
     @abstractmethod
     def aggregate_cohorts(self) -> int:
-        """Group-by cohort, returning the summed count.
-
-        Returns the sum rather than the groups so it has a known correct answer:
-        it must equal the node count on every platform.
-        """
+        """Group-by cohort, returning the summed count (must equal the node count)."""
 
     @abstractmethod
     def aggregate_rel_count(self) -> int:
@@ -247,10 +211,5 @@ class Adapter(ABC):
 
     # ---------------------------------------------------------- footprint ---
     def footprint(self) -> dict[str, Any]:
-        """Whatever the platform exposes about its own resource use.
-
-        Default is "nothing observable", which is the honest answer for a managed
-        service that does not expose it. Overridden where the engine has a real
-        introspection command. Never estimated.
-        """
+        """Whatever the platform exposes about its own resource use. Never estimated."""
         return {"observable": False, "reason": "engine exposes no store/memory introspection"}

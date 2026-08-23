@@ -1,16 +1,8 @@
 """Bolt transport plus the three engines that speak it: CognoDB, Neo4j, Memgraph.
 
-CognoDB advertises Bolt 5.0-5.4 and compatibility with the official Neo4j
-drivers, which is the reason all three can share one transport. It also means the
-comparison against Neo4j is as close to apples-to-apples as this study gets: same
-driver, same protocol version negotiation, same query text, same client.
-
-Sessions are thread-local. The Neo4j driver is thread-safe but a Session is not,
-and the mixed workload runs up to 40 concurrent clients, so each thread takes its
-own session out of one shared driver pool. That also matches how a real
-application uses the driver, which matters because the alternative (a lock around
-one session) would serialise the concurrency test and produce a meaningless
-throughput number.
+CognoDB advertises Bolt 5.0-5.4 and official-driver compatibility, so all three
+share one transport, which makes the CognoDB/Neo4j comparison as close to
+apples-to-apples as this study gets: same driver, same query text, same client.
 """
 
 import threading
@@ -29,14 +21,12 @@ class BoltAdapter(CypherAdapter):
         user = conn.get("user") or ""
         password = conn.get("password") or ""
 
-        # Memgraph out of the box has auth disabled and rejects a credential
-        # tuple, while CognoDB and Aura require one. Empty user means no auth.
+        # Memgraph ships with auth off and rejects a credential tuple; CognoDB and
+        # Aura require one.
         auth = (user, password) if user else None
 
-        # Pool sized to the largest concurrency level plus headroom, so the
-        # mixed workload never blocks waiting for a connection. If it did, the
-        # measurement would include queueing in my client rather than work in
-        # the database.
+        # Sized past the largest concurrency level, so the mixed workload never
+        # measures queueing in my client instead of work in the database.
         pool = max(self.workloads.concurrency) + 4
 
         self._driver = GraphDatabase.driver(
@@ -47,20 +37,22 @@ class BoltAdapter(CypherAdapter):
             connection_timeout=30.0,
             keep_alive=True,
         )
-        # Only Neo4j supports multiple databases. Passing database= to Memgraph
-        # or CognoDB is a protocol error, so it stays None unless configured.
+        # Only Neo4j has multiple databases; passing database= elsewhere is a
+        # protocol error.
         self._database = conn.get("database") or None
 
         self._local = threading.local()
         self._sessions: list[Any] = []
         self._sessions_lock = threading.Lock()
 
-        # Fail here, before any timing starts, if the endpoint is wrong. A
-        # connection error discovered mid-load would corrupt the ingest number.
+        # Fail before any timing starts: a connection error mid-load would corrupt
+        # the ingest number.
         self._driver.verify_connectivity()
         self.build_queries()
 
     def _session(self):
+        # Thread-local: the driver is thread-safe, a Session is not, and the mixed
+        # workload runs 40 clients.
         session = getattr(self._local, "session", None)
         if session is None:
             session = (
@@ -74,17 +66,16 @@ class BoltAdapter(CypherAdapter):
         return session
 
     def run(self, query: str, params: dict | None = None) -> list[dict]:
-        # Autocommit. Fully consuming the result is what commits it, so the list
-        # comprehension is load-bearing rather than just convenient.
+        # Autocommit: consuming the result is what commits it, so the list
+        # comprehension is load-bearing.
         result = self._session().run(query, params or {})
         return [dict(record) for record in result]
 
     def reset_connection(self) -> None:
-        """Throw away this thread's session so the next call gets a fresh one.
+        """Drop this thread's session so the next call reconnects.
 
-        Needed after an engine-side OOM: Neo4j drops the connection when the heap
-        blows, and the cached session then fails every subsequent query with
-        "Failed to read from defunct connection" no matter how small the retry.
+        Neo4j drops the connection when the heap blows, and the cached session then
+        fails every retry with "Failed to read from defunct connection".
         """
         session = getattr(self._local, "session", None)
         if session is not None:
@@ -103,20 +94,15 @@ class BoltAdapter(CypherAdapter):
                 try:
                     session.close()
                 except Exception:  # noqa: BLE001, S110
-                    # Already-dead sessions are expected after an engine OOMs.
-                    # Nothing useful to do and nothing worth reporting.
-                    pass
+                    pass  # dead sessions are expected after an engine OOMs
             self._sessions.clear()
         self._driver.close()
 
     def _try_variants(self, description: str, variants: list[str]) -> str | None:
-        """Run the first DDL variant that works, return what it was.
+        """Run the first DDL variant that works and report which one it was.
 
-        Cypher's index and constraint syntax is not portable and the engines
-        disagree in ways that are not always documented. Rather than guess, try
-        the known forms in order and record which one the server accepted, so the
-        README can state what each platform actually has rather than what I hoped
-        it had.
+        Index/constraint syntax is not portable and the engines disagree in ways
+        that are not always documented, so try and record rather than assume.
         """
         errors = []
         for stmt in variants:
@@ -128,7 +114,9 @@ class BoltAdapter(CypherAdapter):
                 if "already exist" in msg or "equivalent" in msg:
                     return f"{description}: already present"
                 errors.append(f"{type(exc).__name__}: {exc}")
-        self.index_failures.append(f"{description} -> none of {len(variants)} forms worked: {errors}")
+        self.index_failures.append(
+            f"{description} -> none of {len(variants)} forms worked: {errors}"
+        )
         return None
 
 
@@ -158,8 +146,8 @@ class Neo4jAdapter(BoltAdapter):
                 "id (edge load path)",
                 [f"CREATE INDEX {label.lower()}_id IF NOT EXISTS FOR (a:{label}) ON (a.id)"],
             ),
-            # Composite. Neo4j supports it, Memgraph does not, and the filtered
-            # lookup is where that shows up.
+            # Neo4j has composite indexes, Memgraph does not. Shows up in the
+            # filtered lookup.
             self._try_variants(
                 "composite (cohort, degree)",
                 [
@@ -173,11 +161,8 @@ class Neo4jAdapter(BoltAdapter):
             ),
         ]
 
-        # Neo4j builds indexes asynchronously. Without this wait the index phase
-        # would look instant and the cost would leak into the edge-load phase,
-        # flattering the index number and penalising the edge number. Every other
-        # engine here builds synchronously, so waiting is what makes the phases
-        # comparable.
+        # Neo4j builds indexes asynchronously; without this the cost leaks into
+        # the edge phase. Every other engine here builds synchronously.
         self.run("CALL db.awaitIndexes(300)")
         return [c for c in created if c] + self.index_failures
 
@@ -215,11 +200,11 @@ class MemgraphAdapter(BoltAdapter):
             ),
             self._try_variants("key", [f"CREATE INDEX ON :{label}(key)"]),
             self._try_variants("id (edge load path)", [f"CREATE INDEX ON :{label}(id)"]),
-            # Single property only. Memgraph has no composite label-property
-            # index, so the filtered lookup gets an index on cohort and then
-            # filters degree in the engine. That is a genuine capability gap and
-            # it belongs in the results table, not in a footnote.
-            self._try_variants("cohort (no composite support)", [f"CREATE INDEX ON :{label}(cohort)"]),
+            # No composite label-property index, so degree gets filtered in the
+            # engine. A real capability gap, reported in the results table.
+            self._try_variants(
+                "cohort (no composite support)", [f"CREATE INDEX ON :{label}(cohort)"]
+            ),
             self._try_variants(
                 "bench tag (mixed workload cleanup)",
                 [f"CREATE INDEX ON :{BENCH_LABEL}(tag)"],
@@ -233,9 +218,7 @@ class MemgraphAdapter(BoltAdapter):
         except Exception as exc:  # noqa: BLE001
             return {"observable": False, "reason": f"SHOW STORAGE INFO failed: {exc}"}
 
-        # Returns one row per statistic as (storage info, value) pairs in older
-        # builds and a single wide row in newer ones, so handle both rather than
-        # assuming a shape.
+        # Older builds return (name, value) pairs, newer ones a single wide row.
         info: dict[str, Any] = {"observable": True, "source": "SHOW STORAGE INFO"}
         if rows and len(rows[0]) == 2:
             keys = list(rows[0])
@@ -250,15 +233,11 @@ class MemgraphAdapter(BoltAdapter):
 class CognoDBAdapter(BoltAdapter):
     """CognoDB Cloud.
 
-    Bolt and Cypher compatible, so it inherits everything. The one thing that
-    cannot be assumed is DDL: CognoDB documents Cypher and driver compatibility
-    but not which index syntax it implements, and I have no way to check without
-    an instance. So the DDL tries the Neo4j 5 form first, then the Neo4j 4 form,
-    then the Memgraph form, and records which one the server took. Whatever it
-    ends up using is printed in the results.
-
-    Same for version and footprint: probe, and report "not observable" if nothing
-    answers, rather than reporting a guess.
+    Inherits everything except DDL. CognoDB documents Cypher and driver
+    compatibility but not which index syntax it implements, so this tries the
+    Neo4j 5 form, then Neo4j 4, then Memgraph, and records which one was accepted.
+    Version and footprint are probed the same way and report "not observable"
+    rather than a guess.
     """
 
     engine = "cognodb"
@@ -315,8 +294,7 @@ class CognoDBAdapter(BoltAdapter):
             ),
         ]
 
-        # Harmless if unsupported, and necessary if CognoDB builds indexes the
-        # way Neo4j does.
+        # Harmless if unsupported, needed if CognoDB builds indexes like Neo4j.
         try:
             self.run("CALL db.awaitIndexes(300)")
         except Exception:  # noqa: BLE001, S110

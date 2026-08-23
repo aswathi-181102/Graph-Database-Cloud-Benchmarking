@@ -1,12 +1,7 @@
-"""`graphbench doctor`: what is configured, what is reachable, what gets skipped.
+"""`graphbench doctor`: what is configured, what gets skipped.
 
-This exists because the failure mode it prevents is expensive. Without it you
-start a run, wait through a 3 minute ingest, and then find out platform four had
-a typo in its password. Doctor answers "will this run do what I think" in about
-a second, before anything is loaded.
-
-Connectivity checking is added in the adapter layer; at this stage it only
-reports config-level readiness.
+Exists so a typo in a password is found in a second rather than three minutes into
+an ingest. Connectivity checking lands with the runner.
 """
 
 from graphbench.config import Platform
@@ -37,9 +32,8 @@ def render(platforms: list[Platform]) -> str:
     lines.append("")
     lines.append(f"{len(ready)} of {len(platforms)} platforms ready " + f"({by_track})")
 
-    # The fairness rule the assignment cares about applies within the local
-    # track, so warn when that track is too thin to say anything. A cloud-only
-    # run is still publishable, it just cannot claim resource parity.
+    # Resource parity only exists within the local track, so warn when it is too
+    # thin. A cloud-only run is publishable, it just cannot claim parity.
     local_ready = by_track.get("local", 0)
     if local_ready < 2:
         lines.append(
