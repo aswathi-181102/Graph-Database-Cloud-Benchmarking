@@ -19,8 +19,22 @@ def build_parser() -> argparse.ArgumentParser:
     ds.add_argument("--force", action="store_true", help="re-download even if cached")
 
     sub.add_parser("doctor")
-    sub.add_parser("run")
-    sub.add_parser("report")
+
+    run = sub.add_parser("run")
+    run.add_argument("--platforms", help="comma separated ids, default all usable")
+    run.add_argument("--track", choices=["local", "cloud", "reference"])
+    run.add_argument("--skip-mixed", action="store_true", help="reads only, much faster")
+    run.add_argument(
+        "--no-restart",
+        action="store_true",
+        help="do not restart local containers first (results stop being comparable)",
+    )
+    run.add_argument("--dataset", default=None)
+    run.add_argument("--run-id", default=None)
+
+    rep = sub.add_parser("report")
+    rep.add_argument("--run-id", default=None, help="default is the latest run")
+
     return p
 
 
@@ -38,8 +52,7 @@ def cmd_dataset(args: argparse.Namespace) -> int:
         prepare.prepare(ds, seed=seed, force=args.force)
         return 0
 
-    graph = datasets.load(ds.name)
-    print(json.dumps(graph.manifest, indent=2))
+    print(json.dumps(datasets.load(ds.name).manifest, indent=2))
     return 0
 
 
@@ -48,26 +61,62 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
     platforms = config.load_platforms()
     print(doctor.render(platforms))
-    # Non-zero when nothing is usable, so CI or a shell script can tell the
-    # difference between "ran and found nothing" and "ran fine".
     return 0 if any(p.usable for p in platforms) else 1
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    from graphbench import config, runner
+
+    platforms = config.load_platforms()
+
+    if args.track:
+        platforms = [p for p in platforms if p.track == args.track]
+    if args.platforms:
+        wanted = {s.strip() for s in args.platforms.split(",") if s.strip()}
+        unknown = wanted - {p.id for p in platforms}
+        if unknown:
+            print(f"unknown platform ids: {sorted(unknown)}", file=sys.stderr)
+            return 2
+        platforms = [p for p in platforms if p.id in wanted]
+
+    if not any(p.usable for p in platforms):
+        print("nothing to run, see `graphbench doctor`", file=sys.stderr)
+        return 1
+
+    dataset = args.dataset or config.default_dataset()
+    summary = runner.run_all(
+        platforms,
+        datasets.load(dataset),
+        config.load_workloads(),
+        skip_mixed=args.skip_mixed,
+        run_id=args.run_id,
+        restart=not args.no_restart,
+    )
+    # Non-zero if the platforms disagreed about what a query returns. That is not a
+    # slow benchmark, it is an invalid one, and it should be loud.
+    return 0 if summary["verification"]["clean"] else 3
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    from graphbench.report import render
+
+    return render.build(run_id=args.run_id)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    # Read .env before anything touches config, so ${VAR} references resolve.
-    # override=False: a variable already exported in the shell wins over the
-    # file, which is what you want when overriding one platform for a one-off.
+    # override=False: an exported shell variable beats the file, which is what you
+    # want when overriding one platform for a one-off.
     load_dotenv(paths.ROOT / ".env", override=False)
     paths.ensure_dirs()
 
-    if args.command == "dataset":
-        return cmd_dataset(args)
-    if args.command == "doctor":
-        return cmd_doctor(args)
-
-    print(f"{args.command}: not wired up yet", file=sys.stderr)
-    return 1
+    handlers = {
+        "dataset": cmd_dataset,
+        "doctor": cmd_doctor,
+        "run": cmd_run,
+        "report": cmd_report,
+    }
+    return handlers[args.command](args)
 
 
 if __name__ == "__main__":
