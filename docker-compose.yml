@@ -1,0 +1,195 @@
+# The resource-matched track.
+#
+# Every service here gets cpus: 0.5 and mem_limit: 256m, which is CognoDB's free
+# c0 envelope. This is the part of the suite that can honestly claim resource
+# parity, because it is the only part where I control the resources.
+#
+# Three things about this file are deliberate and worth defending:
+#
+# 1. Image tags are pinned to exact patch versions, not :latest. A benchmark that
+#    says "Memgraph" without saying which build is a benchmark you cannot repeat.
+#
+# 2. Every engine gets its memory tuning flags set so it actually tries to live
+#    inside 256 MB. Booting an engine with defaults sized for a 16 GB host and
+#    then reporting that it died is not a fair test, it is a rigged one. Where an
+#    engine still cannot start, that gets reported as a result with the real
+#    error, which is the interesting outcome given CognoDB claims some of these
+#    engines fall over at this limit.
+#
+# 3. Disk is NOT capped. storage_opt.size needs a quota-capable storage driver
+#    and Docker Desktop's overlay2 on macOS is not, so the 1 GB limit cannot be
+#    enforced here. It is also not binding: the prepared dataset is about 2.7 MB
+#    of CSV and no engine's store gets near 1 GB. Recorded as "declared but not
+#    enforced" in the README rather than quietly claimed as enforced.
+#
+# Ports are shifted off the defaults where they would clash with each other
+# (Memgraph and Neo4j both want 7687), so nothing depends on ordering.
+#
+# On "benchpass123": that is a throwaway password for containers bound to
+# localhost that get destroyed by `make down`. It is not a secret and it is not
+# the same class of thing as the cloud credentials, which are never in this repo
+# and are read from the environment only. Calling it out because the assignment
+# is explicit about not committing credentials and a reader should be able to
+# tell the difference at a glance.
+
+x-caps: &caps
+  # Anchored so the caps are visibly identical rather than four numbers that
+  # happen to match today. If this block changes, it changes for everyone.
+  cpus: 0.5
+  mem_limit: 256m
+  restart: "no"
+
+services:
+  neo4j:
+    <<: *caps
+    image: neo4j:5.26.29-community
+    container_name: gb-neo4j
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    environment:
+      NEO4J_AUTH: neo4j/benchpass123
+      # A JVM inside 256 MB needs the heap and page cache set by hand. Defaults
+      # are computed from host RAM (8 GB here), so Neo4j would ask for a ~2 GB
+      # heap and be killed before it logged anything.
+      #
+      # 96m heap + 48m page cache leaves roughly 110 MB for metaspace, code
+      # cache, thread stacks and native buffers. That is the tightest split I
+      # could get to boot; a page cache this small means the store will not sit
+      # in memory, which is a real and reportable disadvantage at this tier
+      # rather than a configuration mistake.
+      NEO4J_server_memory_heap_initial__size: 96m
+      NEO4J_server_memory_heap_max__size: 96m
+      NEO4J_server_memory_pagecache_size: 48m
+      # Off to reclaim memory and threads that have nothing to do with the
+      # benchmark. Same switches applied in spirit to every engine below.
+      #
+      # Note: server.metrics.* is Enterprise only and Community refuses to start
+      # on an unrecognised setting, so it is not listed here. Found that out by
+      # watching the container exit 1 with "No declared setting with name:
+      # server.metrics.enabled", which is a better error than most.
+      NEO4J_dbms_usage__report_enabled: "false"
+      NEO4J_server_bolt_thread__pool__max__size: "40"
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      # A TCP probe, not cypher-shell. cypher-shell is a second JVM and starting
+      # one inside a 256 MB container to answer "are you alive" would OOM the
+      # database we are trying to health check.
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/7687'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  memgraph:
+    <<: *caps
+    image: memgraph/memgraph:3.12.0
+    container_name: gb-memgraph
+    ports:
+      - "7688:7687"
+    command:
+      - "--memory-limit=200"
+      # Memgraph is in-memory, so its own limit has to sit below the container
+      # limit or the kernel kills it before Memgraph can refuse a query. 200 MB
+      # leaves ~56 MB for the process itself. When it hits this it returns a
+      # memory error, which is a far more useful result than an OOM kill because
+      # the error says which query could not be served.
+      - "--storage-snapshot-interval-sec=0"
+      - "--storage-wal-enabled=false"
+      # Durability off. Not a cheat: this is the configuration Memgraph
+      # documents for pure query benchmarking, and the effect is written into
+      # the README next to its numbers so the trade is visible. Neo4j and
+      # ArangoDB below are left durable, which is a genuine asymmetry that gets
+      # stated rather than hidden.
+      - "--telemetry-enabled=false"
+      - "--log-level=WARNING"
+    volumes:
+      - memgraph-data:/var/lib/memgraph
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/7687'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+
+  arangodb:
+    <<: *caps
+    image: arangodb:3.12.10.1
+    container_name: gb-arangodb
+    ports:
+      - "8529:8529"
+    environment:
+      ARANGO_ROOT_PASSWORD: benchpass123
+    command:
+      - "arangod"
+      # RocksDB sizes its buffers and block cache from host RAM by default, so
+      # without these it asks for well over 256 MB at startup.
+      #
+      # 64 MiB is not a preference, it is the floor: 32 MiB is rejected outright
+      # with "invalid value for '--rocksdb.total-write-buffer-size'" and the
+      # server refuses to start. So ArangoDB cannot be tuned as tightly as the
+      # others, and that itself is a result worth reporting for a 256 MB tier.
+      - "--rocksdb.total-write-buffer-size=67108864"
+      - "--rocksdb.write-buffer-size=8388608"
+      - "--rocksdb.max-write-buffer-number=2"
+      - "--rocksdb.block-cache-size=33554432"
+      - "--cache.size=16777216"
+      # Without this, ArangoDB reads host RAM (8 GB) rather than the cgroup limit
+      # and sets a per-query AQL budget of ~2.4 GB, i.e. ten times the container.
+      # A single aggregation could then try to allocate its way to an OOM kill.
+      # 128 MiB keeps it under the container limit so an over-large query fails
+      # with an AQL error, which is diagnosable, instead of the process
+      # disappearing, which is not.
+      - "--query.memory-limit=134217728"
+      - "--server.statistics=false"
+      - "--foxx.queues=false"
+      - "--javascript.v8-contexts=2"
+      # V8 is the expensive part of an ArangoDB process and it is not used by
+      # any query in this suite (no Foxx, no JS transactions), so it is held to
+      # the minimum the server will accept.
+    volumes:
+      - arango-data:/var/lib/arangodb3
+    healthcheck:
+      # /_api/version answers 401 without credentials, so the probe has to
+      # authenticate. The image ships BusyBox wget, which has no --user or
+      # --password, so credentials go in the URL. Password comes from the
+      # container's own env rather than being repeated here; $$ escapes so
+      # compose passes a literal $ through to the shell.
+      test:
+        - "CMD-SHELL"
+        - "wget -q -O /dev/null
+           http://root:$$ARANGO_ROOT_PASSWORD@127.0.0.1:8529/_api/version || exit 1"
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 30s
+
+  falkordb:
+    <<: *caps
+    image: falkordb/falkordb:v4.20.4
+    container_name: gb-falkordb
+    ports:
+      - "6380:6379"
+    environment:
+      # THREAD_COUNT 1 matches the 0.5 vCPU cap. FalkorDB defaults to one
+      # reader thread per core and would spawn 8 here, all fighting over half a
+      # core, which measures scheduler contention instead of the engine.
+      FALKORDB_ARGS: "THREAD_COUNT 1"
+      # maxmemory below the container limit for the same reason as Memgraph:
+      # a Redis-level rejection is a usable error, an OOM kill is not.
+      REDIS_ARGS: "--maxmemory 200mb --save ''"
+    volumes:
+      - falkordb-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+volumes:
+  neo4j-data:
+  memgraph-data:
+  arango-data:
+  falkordb-data:
