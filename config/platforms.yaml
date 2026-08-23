@@ -110,6 +110,8 @@ platforms:
   # ---------------------------------------------------------------- local ----
   # Caps and pinned image tags live in docker-compose.yml.
   - id: neo4j-local
+    container: gb-neo4j
+    data_dir: /data
     display: Neo4j 5 Community (capped)
     engine: neo4j
     adapter: bolt
@@ -127,6 +129,8 @@ platforms:
       database: neo4j
 
   - id: memgraph-local
+    container: gb-memgraph
+    data_dir: /var/lib/memgraph
     display: Memgraph (capped)
     engine: memgraph
     adapter: bolt
@@ -144,6 +148,8 @@ platforms:
       database: ""
 
   - id: arango-local
+    container: gb-arangodb
+    data_dir: /var/lib/arangodb3
     display: ArangoDB (capped)
     engine: arangodb
     adapter: arango
@@ -161,6 +167,8 @@ platforms:
       database: ${LOCAL_ARANGO_DB:-_system}
 
   - id: falkordb-local
+    container: gb-falkordb
+    data_dir: /data
     display: FalkorDB (capped)
     engine: falkordb
     adapter: falkor
