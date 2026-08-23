@@ -1,0 +1,46 @@
+[project]
+name = "graphbench"
+version = "0.1.0"
+description = "Benchmark harness comparing CognoDB Cloud against other managed graph databases"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+
+# exact pins: if the client driver moves, the latency numbers stop being
+# comparable to the ones already in results/
+dependencies = [
+    "neo4j==5.28.4",
+    "FalkorDB==1.7.1",
+    "python-arango==8.3.3",
+    "PyYAML==6.0.3",
+    "python-dotenv==1.2.3",
+    "matplotlib==3.10.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.16.4",
+]
+
+[project.scripts]
+graphbench = "graphbench.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

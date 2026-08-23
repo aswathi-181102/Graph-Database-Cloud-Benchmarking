@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- graphbench ---
+.env
+data/raw/
+data/prepared/
+results/*/raw/
+*.tmp
