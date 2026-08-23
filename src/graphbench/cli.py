@@ -2,6 +2,8 @@ import argparse
 import json
 import sys
 
+from dotenv import load_dotenv
+
 from graphbench import __version__, datasets, paths
 
 
@@ -41,12 +43,28 @@ def cmd_dataset(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    from graphbench import config, doctor
+
+    platforms = config.load_platforms()
+    print(doctor.render(platforms))
+    # Non-zero when nothing is usable, so CI or a shell script can tell the
+    # difference between "ran and found nothing" and "ran fine".
+    return 0 if any(p.usable for p in platforms) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # Read .env before anything touches config, so ${VAR} references resolve.
+    # override=False: a variable already exported in the shell wins over the
+    # file, which is what you want when overriding one platform for a one-off.
+    load_dotenv(paths.ROOT / ".env", override=False)
     paths.ensure_dirs()
 
     if args.command == "dataset":
         return cmd_dataset(args)
+    if args.command == "doctor":
+        return cmd_doctor(args)
 
     print(f"{args.command}: not wired up yet", file=sys.stderr)
     return 1
