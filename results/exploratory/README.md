@@ -16,4 +16,12 @@ looked like before they were found:
   destroyed, so Memgraph recovered a snapshot on boot and loaded 98,050 of 198,050.
 - `20260824T054424Z` — first working Kùzu run, single platform.
 
-The published runs are the two 5-platform ones in `results/`.
+- `20260824T171739Z` - first run at the corrected 512 MB cap and the first with
+  CognoDB in it. Kept because it is the evidence for the reconnect fix: CognoDB's
+  3-hop came back ABANDONED on `Failed to read from defunct connection`, and
+  probing it straight afterwards showed 3-hop working on every start degree and
+  returning counts matching all four other engines. A lost packet on a 240 ms link
+  was being reported as an engine that could not run the query. Superseded by the
+  run that follows the fix.
+
+The published runs are the 5-platform and 6-platform ones in `results/`.
