@@ -25,12 +25,18 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--track", choices=["local", "cloud", "reference"])
     run.add_argument("--skip-mixed", action="store_true", help="reads only, much faster")
     run.add_argument(
-        "--no-restart",
+        "--no-reset",
         action="store_true",
-        help="do not restart local containers first (results stop being comparable)",
+        help="reuse the local containers as-is (ingest numbers stop being comparable)",
     )
     run.add_argument("--dataset", default=None)
     run.add_argument("--run-id", default=None)
+
+    cal = sub.add_parser("calibrate", help="batch size sweep and repeat-run variance")
+    cal.add_argument("--platforms", help="comma separated ids, default the local track")
+    cal.add_argument("--batch-sizes", default="1000,2500,5000,10000")
+    cal.add_argument("--repeats", type=int, default=1)
+    cal.add_argument("--dataset", default=None)
 
     rep = sub.add_parser("report")
     rep.add_argument("--run-id", default=None, help="default is the latest run")
@@ -90,11 +96,36 @@ def cmd_run(args: argparse.Namespace) -> int:
         config.load_workloads(),
         skip_mixed=args.skip_mixed,
         run_id=args.run_id,
-        restart=not args.no_restart,
+        restart=not args.no_reset,
     )
     # Non-zero if the platforms disagreed about what a query returns. That is not a
     # slow benchmark, it is an invalid one, and it should be loud.
     return 0 if summary["verification"]["clean"] else 3
+
+
+def cmd_calibrate(args: argparse.Namespace) -> int:
+    from graphbench import calibrate, config
+
+    platforms = [p for p in config.load_platforms() if p.usable]
+    if args.platforms:
+        wanted = {s.strip() for s in args.platforms.split(",") if s.strip()}
+        platforms = [p for p in platforms if p.id in wanted]
+    else:
+        platforms = [p for p in platforms if p.track == "local"]
+
+    if not platforms:
+        print("nothing to calibrate, see `graphbench doctor`", file=sys.stderr)
+        return 1
+
+    sizes = sorted(int(s) for s in args.batch_sizes.split(","))
+    calibrate.sweep(
+        platforms,
+        datasets.load(args.dataset or config.default_dataset()),
+        config.load_workloads(),
+        sizes,
+        repeats=args.repeats,
+    )
+    return 0
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -114,6 +145,7 @@ def main(argv: list[str] | None = None) -> int:
         "dataset": cmd_dataset,
         "doctor": cmd_doctor,
         "run": cmd_run,
+        "calibrate": cmd_calibrate,
         "report": cmd_report,
     }
     return handlers[args.command](args)

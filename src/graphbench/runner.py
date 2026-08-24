@@ -20,6 +20,12 @@ from graphbench.datasets import PreparedGraph
 from graphbench.workloads import mixed, reads
 
 
+def _say(message: str) -> None:
+    # flush because a benchmark run takes minutes and python buffers stdout when it
+    # is redirected, so `graphbench run > log` would show nothing until the end.
+    print(message, flush=True)
+
+
 def new_run_id() -> str:
     return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
@@ -37,15 +43,15 @@ def _print_load(stats) -> None:
     if rps:
         rates.append(f"{rps:,.0f} rels/s")
     suffix = f" ({', '.join(rates)})" if rates else ""
-    print(f"    load {stats.total_seconds:.1f}s{suffix}")
+    _say(f"    load {stats.total_seconds:.1f}s{suffix}")
 
 
 def _print_read(result) -> None:
     state = "ABANDONED" if result.abandoned else "ok"
     if not len(result.latency):
-        print(f"    {result.name:28} {state:9} no samples, {len(result.latency.errors)} errors")
+        _say(f"    {result.name:28} {state:9} no samples, {len(result.latency.errors)} errors")
         return
-    print(
+    _say(
         f"    {result.name:28} {state:9} "
         f"p50 {_fmt_ms(result.latency.p50)}ms  p95 {_fmt_ms(result.latency.p95)}ms  "
         f"n={len(result.latency)}"
@@ -88,23 +94,26 @@ def run_platform(
     }
     began = time.perf_counter()
 
-    # Fresh process per platform, local track only. Without this an engine that
-    # does not release freed memory starts its load with the budget already spent,
-    # which is how Memgraph went from loading 198,050 edges to failing at 5,000.
-    if restart and platform.container:
+    # Virgin store per platform, local track only. A restart is not enough: see
+    # dockerctl for the two ways this went wrong before landing on destroy-and-
+    # rebuild.
+    if restart and platform.container and platform.service:
         try:
-            record["restart"] = dockerctl.restart(platform.container)
-            print(f"    restarted {platform.container} "
-                  f"({record['restart']['seconds_to_healthy']}s to healthy)")
+            record["reset"] = dockerctl.recreate(platform.service, platform.container)
+            _say(
+                f"    recreated {platform.container} "
+                f"({record['reset']['seconds_to_healthy']}s to healthy, "
+                f"volumes wiped: {len(record['reset']['volumes_removed'])})"
+            )
         except dockerctl.DockerUnavailable as exc:
-            record["restart"] = {"restarted": False, "reason": str(exc)}
-            record["errors"].append(f"restart skipped: {exc}")
+            record["reset"] = {"reset": False, "reason": str(exc)}
+            record["errors"].append(f"reset skipped: {exc}")
     else:
-        record["restart"] = {
-            "restarted": False,
-            "reason": "no container (cloud or reference platform)"
+        record["reset"] = {
+            "reset": False,
+            "reason": "not a local container platform"
             if not platform.container
-            else "disabled with --no-restart",
+            else "disabled with --no-reset",
         }
 
     adapter = adapters.build(platform, graph, workloads)
@@ -114,7 +123,7 @@ def run_platform(
         record["server_version"] = adapter.server_version()
         record["dialect"] = adapter.dialect
         record["load_method"] = adapter.load_method
-        print(f"    {record['server_version']}")
+        _say(f"    {record['server_version']}")
 
         load_stats = adapter.load()
         record["load"] = load_stats.to_dict()
@@ -141,7 +150,7 @@ def run_platform(
                 "errors": outcome.errors,
             }
             for level in outcome.results:
-                print(
+                _say(
                     f"    mixed c={level.concurrency:<3} {level.qps:8.1f} qps  "
                     f"reads={level.reads:<7} writes={level.writes:<6} "
                     f"read p95 {_fmt_ms(level.read_latency.p95)}ms"
@@ -162,7 +171,7 @@ def run_platform(
     except Exception as exc:  # noqa: BLE001
         record["errors"].append(f"{type(exc).__name__}: {exc}")
         record["traceback"] = traceback.format_exc(limit=6)
-        print(f"    FAILED: {type(exc).__name__}: {exc}")
+        _say(f"    FAILED: {type(exc).__name__}: {exc}")
     finally:
         try:
             adapter.close()
@@ -214,10 +223,10 @@ def run_all(
         "platforms": [],
     }
 
-    print(f"run {run_id}: {len(usable)} platforms, {len(skipped)} skipped")
+    _say(f"run {run_id}: {len(usable)} platforms, {len(skipped)} skipped")
     records = []
     for i, platform in enumerate(usable, 1):
-        print(f"\n[{i}/{len(usable)}] {platform.display} ({platform.track})")
+        _say(f"\n[{i}/{len(usable)}] {platform.display} ({platform.track})")
         record = run_platform(
             platform, graph, workloads, run_id, skip_mixed=skip_mixed, restart=restart
         )
@@ -238,27 +247,27 @@ def run_all(
     summary["finished_at"] = datetime.now(UTC).isoformat(timespec="seconds")
     (out_dir / "run.json").write_text(json.dumps(summary, indent=2, default=str))
 
-    print(f"\nwrote {out_dir.relative_to(paths.ROOT)}/")
+    _say(f"\nwrote {out_dir.relative_to(paths.ROOT)}/")
     _print_verification(summary["verification"])
     return summary
 
 
 def _print_verification(report: dict[str, Any]) -> None:
     for failure in report.get("expectation_failures", [])[:5]:
-        print(
+        _say(
             f"verification: {failure['platform']} {failure['workload']} "
             f"expected {failure['expected']}, got {failure['got']}"
         )
     for failure in report.get("monotonic_failures", [])[:5]:
-        print(f"verification: non-monotonic hops on {failure['platform']} at {failure['key']}")
+        _say(f"verification: non-monotonic hops on {failure['platform']} at {failure['key']}")
 
     if not report.get("compared"):
         # Agreement needs two platforms to have answered the same question.
-        print("verification: only one platform answered, nothing to cross-check")
+        _say("verification: only one platform answered, nothing to cross-check")
         return
     if report.get("agree"):
-        print(f"verification: all platforms agree on {report['compared']} checked values")
+        _say(f"verification: all platforms agree on {report['compared']} checked values")
         return
-    print(f"verification: {len(report.get('mismatches', []))} DISAGREEMENTS")
+    _say(f"verification: {len(report.get('mismatches', []))} DISAGREEMENTS")
     for m in report.get("mismatches", [])[:10]:
-        print(f"  {m['workload']} / {m['key']}: {m['values']}")
+        _say(f"  {m['workload']} / {m['key']}: {m['values']}")

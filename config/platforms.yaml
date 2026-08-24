@@ -111,6 +111,7 @@ platforms:
   # Caps and pinned image tags live in docker-compose.yml.
   - id: neo4j-local
     container: gb-neo4j
+    service: neo4j
     data_dir: /data
     display: Neo4j 5 Community (capped)
     engine: neo4j
@@ -130,6 +131,7 @@ platforms:
 
   - id: memgraph-local
     container: gb-memgraph
+    service: memgraph
     data_dir: /var/lib/memgraph
     display: Memgraph (capped)
     engine: memgraph
@@ -149,6 +151,7 @@ platforms:
 
   - id: arango-local
     container: gb-arangodb
+    service: arangodb
     data_dir: /var/lib/arangodb3
     display: ArangoDB (capped)
     engine: arangodb
@@ -168,6 +171,7 @@ platforms:
 
   - id: falkordb-local
     container: gb-falkordb
+    service: falkordb
     data_dir: /data
     display: FalkorDB (capped)
     engine: falkordb

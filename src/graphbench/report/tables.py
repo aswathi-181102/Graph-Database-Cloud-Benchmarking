@@ -213,10 +213,10 @@ def index_table(records: list[dict]) -> str:
 
 
 def status_table(records: list[dict]) -> str:
-    rows = [["Platform", "Status", "Restarted first", "Wall clock (s)", "Errors"]]
+    rows = [["Platform", "Status", "Store reset first", "Wall clock (s)", "Errors"]]
     for r in records:
-        restart = r.get("restart") or {}
-        note = "yes" if restart.get("restarted") else restart.get("reason", "no")
+        reset = r.get("reset") or r.get("restart") or {}
+        note = "yes, volumes wiped" if reset.get("reset") else reset.get("reason", "no")
         rows.append(
             [
                 r["platform"]["display"],
