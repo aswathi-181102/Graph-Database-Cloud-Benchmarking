@@ -221,5 +221,6 @@ __marimo__/
 .env
 data/raw/
 data/prepared/
+data/kuzu/
 results/*/raw/
 *.tmp

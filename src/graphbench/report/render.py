@@ -53,6 +53,10 @@ def load_run(run_id: str | None = None) -> tuple[dict[str, Any], list[dict[str, 
     return summary, records, run_dir
 
 
+BEGIN_MARKER = "<!-- BEGIN GENERATED RESULTS -->"
+END_MARKER = "<!-- END GENERATED RESULTS -->"
+
+
 def build(run_id: str | None = None) -> int:
     summary, records, run_dir = load_run(run_id)
     hops = summary["workloads"]["hops"]
@@ -65,7 +69,83 @@ def build(run_id: str | None = None) -> int:
     print(f"wrote {out.relative_to(paths.ROOT)} from {run_dir.name}")
     for chart in made:
         print(f"wrote {Path(chart['path']).relative_to(paths.ROOT)}")
+
+    injected = inject_into_readme(summary, records, hops)
+    print(f"{'updated' if injected else 'left alone'} README.md results block")
     return 0
+
+
+def inject_into_readme(
+    summary: dict[str, Any], records: list[dict[str, Any]], hops: list[int]
+) -> bool:
+    """Replace the marked block in README.md with the generated matrix.
+
+    The brief asks for the full results matrix in the README itself, and a
+    hand-maintained copy of numbers that live in JSON drifts within a day. The
+    markers mean the narrative around it stays hand-written.
+    """
+    readme = paths.ROOT / "README.md"
+    text = readme.read_text()
+    if BEGIN_MARKER not in text or END_MARKER not in text:
+        return False
+
+    block = _readme_block(summary, records, hops)
+    head = text.split(BEGIN_MARKER)[0]
+    tail = text.split(END_MARKER)[1]
+    readme.write_text(f"{head}{BEGIN_MARKER}\n{block}\n{END_MARKER}{tail}")
+    return True
+
+
+def _readme_block(
+    summary: dict[str, Any], records: list[dict[str, Any]], hops: list[int]
+) -> str:
+    ds = summary["dataset"]
+    parts = [
+        "",
+        f"Run `{summary['run_id']}` on **{ds.get('dataset')}** "
+        f"({ds.get('nodes', 0):,} nodes / {ds.get('edges', 0):,} relationships). "
+        f"Regenerate with `make report`. Full detail, charts, per-iteration samples "
+        f"and verbatim errors: [docs/RESULTS.md](docs/RESULTS.md).",
+        "",
+    ]
+
+    v = summary.get("verification") or {}
+    if v.get("compared") and v.get("agree"):
+        parts += [
+            f"**Cross-checked:** every platform returned identical values on "
+            f"{v['compared']} query results, so the latencies below are comparing "
+            f"equivalent queries.",
+            "",
+        ]
+    elif v.get("mismatches"):
+        parts += [
+            f"**Warning:** {len(v['mismatches'])} cross-platform disagreements. "
+            f"See [docs/RESULTS.md](docs/RESULTS.md#verification).",
+            "",
+        ]
+
+    for track in ("local", "cloud", "reference"):
+        in_track = [r for r in records if r["platform"]["track"] == track]
+        if not in_track:
+            continue
+        title, blurb = TRACK_TITLES[track]
+        parts += [f"### {title}", "", blurb, ""]
+        parts += ["**Tiers**", "", tables.tier_table(in_track), ""]
+        parts += ["**Data loading**", "", tables.ingest_table(in_track), ""]
+        parts += ["**Read latency (ms)**", "", tables.latency_table(in_track, hops), ""]
+        parts += ["**Mixed workload**", "", tables.mixed_table(in_track), ""]
+        parts += ["**Footprint**", "", tables.footprint_table(in_track), ""]
+
+    if summary.get("skipped"):
+        parts += [
+            "### Not run",
+            "",
+            "No credentials configured, so these were skipped rather than failed:",
+            "",
+        ]
+        parts += [f"- `{s['id']}`: {s['reason']}" for s in summary["skipped"]]
+        parts += [""]
+    return "\n".join(parts)
 
 
 def _document(
@@ -172,8 +252,13 @@ def _document(
         "- `cpus: 0.5` on the local track is a CFS quota, a hard ceiling every "
         "period. CognoDB's 0.5 vCPU is burstable and can exceed baseline while it "
         "has credit, so tail latency is not directly comparable across tracks.",
-        "- Every judgement call behind these numbers, and what this suite does not "
-        "measure, is in [DECISIONS.md](DECISIONS.md).",
+        "- Two runs of identical configuration disagree by 60-360% on ingest and "
+        "saturated throughput while agreeing within 6% on `RETURN 1`. Which metrics "
+        "survive repetition is in [VARIANCE.md](VARIANCE.md), and any difference "
+        "smaller than the spread there is not a finding.",
+        "- Interpretation, mechanisms and known gaps: [ANALYSIS.md](ANALYSIS.md).",
+        "- Every judgement call, and what this suite does not measure: "
+        "[DECISIONS.md](DECISIONS.md).",
         "",
     ]
     return "\n".join(parts) + "\n"

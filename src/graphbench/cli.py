@@ -38,6 +38,9 @@ def build_parser() -> argparse.ArgumentParser:
     cal.add_argument("--repeats", type=int, default=1)
     cal.add_argument("--dataset", default=None)
 
+    cmp_ = sub.add_parser("compare", help="run-to-run variance across identical runs")
+    cmp_.add_argument("run_ids", nargs="*", help="default is every completed run")
+
     rep = sub.add_parser("report")
     rep.add_argument("--run-id", default=None, help="default is the latest run")
 
@@ -128,6 +131,17 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_compare(args: argparse.Namespace) -> int:
+    from graphbench.report import variance
+
+    try:
+        run_ids = variance.resolve(args.run_ids)
+    except (ValueError, FileNotFoundError) as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    return variance.build(run_ids)
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     from graphbench.report import render
 
@@ -146,6 +160,7 @@ def main(argv: list[str] | None = None) -> int:
         "doctor": cmd_doctor,
         "run": cmd_run,
         "calibrate": cmd_calibrate,
+        "compare": cmd_compare,
         "report": cmd_report,
     }
     return handlers[args.command](args)
