@@ -157,3 +157,88 @@ def test_traversal_counts_are_monotonic_in_depth(adapter, workloads):
     two = results["traversal_2hop"].checks
     for key in set(one) & set(two):
         assert one[key] <= two[key]
+
+
+class Flaky:
+    """Adapter stand-in that drops the connection on cue."""
+
+    def __init__(self, drop_at, error):
+        self.drop_at = set(drop_at)
+        self.error = error
+        self.resets = 0
+        self.seen = 0
+
+    def reset_connection(self):
+        self.resets += 1
+
+    def call(self, i):
+        self.seen += 1
+        if self.seen in self.drop_at:
+            raise self.error
+        return 1, "value"
+
+
+def test_a_lost_connection_is_retried_not_fatal(workloads):
+    """A cloud engine 240ms away loses a packet occasionally. Abandoning 100
+    iterations over one dropped socket published a missing row for CognoDB's 3-hop
+    that read as 'cannot run this query'."""
+    flaky = Flaky(
+        drop_at=[5, 40],
+        error=RuntimeError("Failed to read from defunct connection IPv4Address(...)"),
+    )
+    result = reads.run_read_workload("x", flaky.call, workloads, adapter=flaky)
+
+    assert not result.abandoned
+    assert result.reconnects == 2
+    assert flaky.resets == 2
+    assert len(result.latency) == workloads.iterations
+
+
+def test_reconnects_are_reported(workloads):
+    flaky = Flaky(drop_at=[5], error=RuntimeError("defunct connection"))
+    result = reads.run_read_workload("x", flaky.call, workloads, adapter=flaky)
+    assert result.to_dict()["reconnects"] == 1
+
+
+def test_an_out_of_memory_error_is_not_retried(workloads):
+    """A reconnect fixes a lost packet and does nothing for an exhausted heap, so
+    retrying would just produce a second identical failure."""
+    flaky = Flaky(drop_at=[5], error=RuntimeError("Memory limit exceeded! 202.86MiB"))
+    result = reads.run_read_workload("x", flaky.call, workloads, adapter=flaky)
+
+    assert result.abandoned
+    assert result.reconnects == 0
+    assert flaky.resets == 0
+
+
+def test_a_genuinely_dead_connection_abandons_after_one_retry(workloads):
+    """If the reconnect also fails, the connection is really gone, so give up then
+    rather than flapping MAX_RECONNECTS times against a dead endpoint."""
+    flaky = Flaky(
+        drop_at=range(1, 500), error=RuntimeError("Failed to read from defunct connection")
+    )
+    result = reads.run_read_workload("x", flaky.call, workloads, adapter=flaky)
+
+    assert result.abandoned
+    assert result.reconnects == 1
+    assert len(result.latency) == 0
+
+
+def test_intermittent_drops_are_capped_across_the_workload(workloads):
+    """Every other call fails. Each one is individually recoverable, so the run only
+    stops once the total budget is spent."""
+    flaky = Flaky(
+        drop_at=range(1, 500, 2), error=RuntimeError("Failed to read from defunct connection")
+    )
+    result = reads.run_read_workload("x", flaky.call, workloads, adapter=flaky)
+
+    assert result.reconnects == reads.MAX_RECONNECTS
+    # it kept collecting samples in between, rather than throwing the run away
+    assert len(result.latency) > 0
+
+
+def test_without_an_adapter_there_is_nothing_to_reconnect(workloads):
+    flaky = Flaky(drop_at=[5], error=RuntimeError("defunct connection"))
+    result = reads.run_read_workload("x", flaky.call, workloads)
+    assert result.abandoned
+    assert result.reconnects == 0
