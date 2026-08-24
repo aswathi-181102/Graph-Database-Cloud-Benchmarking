@@ -32,6 +32,9 @@ class Tier:
     burstable: bool = False
     notes: str = ""
     source: str = ""
+    # Console-reported version, for engines with no version procedure. Only used
+    # when the server declines to identify itself, and labelled as declared.
+    declared_version: str = ""
 
     def summary(self) -> str:
         cpu = "?" if self.vcpu is None else f"{self.vcpu:g}"

@@ -120,6 +120,23 @@ class BoltAdapter(CypherAdapter):
         return None
 
 
+    def observed_indexes(self) -> list[str]:
+        """What the server reports it has, via SHOW INDEXES / SHOW CONSTRAINTS."""
+        found = []
+        for query, kind in (("SHOW CONSTRAINTS", "constraint"), ("SHOW INDEXES", "index")):
+            try:
+                rows = self.run(query)
+            except Exception:  # noqa: BLE001
+                continue
+            for row in rows:
+                name = row.get("name", "?")
+                label = row.get("label") or row.get("labelsOrTypes") or "?"
+                props = row.get("properties") or row.get("propertyNames") or "?"
+                extra = row.get("kind") or row.get("type") or ""
+                found.append(f"CONFIRMED {kind} {name}: {label}{props} {extra}".strip())
+        return found
+
+
 class Neo4jAdapter(BoltAdapter):
     engine = "neo4j"
     load_method = "official Neo4j Bolt driver, UNWIND batches"
@@ -164,7 +181,7 @@ class Neo4jAdapter(BoltAdapter):
         # Neo4j builds indexes asynchronously; without this the cost leaks into
         # the edge phase. Every other engine here builds synchronously.
         self.run("CALL db.awaitIndexes(300)")
-        return [c for c in created if c] + self.index_failures
+        return [c for c in created if c] + self.observed_indexes() + self.index_failures
 
     def footprint(self) -> dict[str, Any]:
         out: dict[str, Any] = {"observable": True, "source": "dbms.queryJmx"}
@@ -254,6 +271,13 @@ class CognoDBAdapter(BoltAdapter):
                     return str(list(rows[0].values())[0])
             except Exception:  # noqa: BLE001, S110
                 continue
+        # CognoDB implements Cypher and SHOW INDEXES but no procedures at all:
+        # every CALL dbms.* and CALL db.info() is a syntax error. So the version
+        # can only come from the console, and it is labelled as declared rather
+        # than measured.
+        declared = self.platform.tier.declared_version
+        if declared:
+            return f"{declared} (declared in console, no version procedure on the wire)"
         return "unknown (no version procedure answered)"
 
     def create_indexes(self) -> list[str]:
@@ -299,7 +323,10 @@ class CognoDBAdapter(BoltAdapter):
             self.run("CALL db.awaitIndexes(300)")
         except Exception:  # noqa: BLE001, S110
             pass
-        return [c for c in created if c] + self.index_failures
+        # Ask the server what it actually has, rather than inferring it from CREATE
+        # not raising. This is the evidence behind "which properties are indexed on
+        # each platform", so it should not be a guess.
+        return [c for c in created if c] + self.observed_indexes() + self.index_failures
 
     def footprint(self) -> dict[str, Any]:
         for query, source in (
