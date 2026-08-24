@@ -148,5 +148,5 @@ def prepare(ds: Dataset, seed: int = DEFAULT_SEED, force: bool = False) -> Path:
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
-    print(f"wrote {out_dir.relative_to(paths.ROOT)}/")
+    print(f"wrote {paths.display(out_dir)}/")
     return out_dir

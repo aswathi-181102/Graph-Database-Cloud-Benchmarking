@@ -24,6 +24,16 @@ def _read(record: dict, name: str, stat: str = "p50_ms") -> float | None:
     return workload["latency"].get(stat) if workload else None
 
 
+def _log_if_positive(ax, values: list[float]) -> None:
+    """Log scale only when there is something to scale.
+
+    matplotlib warns and renders a broken axis for an all-zero series, which happens
+    whenever a workload was abandoned or is missing from a run.
+    """
+    if any(v > 0 for v in values):
+        ax.set_yscale("log")
+
+
 def _save(fig, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
@@ -51,7 +61,7 @@ def traversal_chart(records: list[dict], hops: list[int], out: Path) -> Path | N
     ax.set_ylabel("p50 latency (ms), log scale")
     # Log because 1-hop and 3-hop are often two orders of magnitude apart, and on a
     # linear axis every 1-hop bar would be an invisible sliver.
-    ax.set_yscale("log")
+    _log_if_positive(ax, [_read(r, f"traversal_{h}hop") or 0 for r in usable for h in hops])
     ax.set_title("Traversal latency by depth (p50)")
     ax.legend()
     ax.grid(axis="y", alpha=0.3, which="both")
@@ -76,7 +86,7 @@ def tail_chart(records: list[dict], out: Path) -> Path | None:
         ax.set_xticks(list(positions))
         ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=8)
         ax.set_title(name.replace("_", " "), fontsize=10)
-        ax.set_yscale("log")
+        _log_if_positive(ax, p50 + p95)
         ax.grid(axis="y", alpha=0.3, which="both")
     axes[0].set_ylabel("latency (ms), log scale")
     axes[0].legend()
@@ -97,7 +107,7 @@ def ingest_chart(records: list[dict], out: Path) -> Path | None:
     ax.set_xticks(list(positions))
     ax.set_xticklabels([_label(r) for r in usable], rotation=20, ha="right")
     ax.set_ylabel("rows per second, log scale")
-    ax.set_yscale("log")
+    _log_if_positive(ax, nodes + rels)
     ax.set_title("Ingest throughput")
     ax.legend()
     ax.grid(axis="y", alpha=0.3, which="both")

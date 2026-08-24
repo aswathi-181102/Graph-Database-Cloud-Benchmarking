@@ -49,3 +49,14 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.coverage.report]
+# The transport half of each adapter needs a live engine and is covered by real
+# runs against the capped containers, not by unit tests. Mocking a Bolt session
+# would test the mock. Query construction, which is where a silent regression
+# would change what the metric means, is unit tested in
+# tests/test_adapter_queries.py.
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]

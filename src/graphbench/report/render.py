@@ -66,9 +66,9 @@ def build(run_id: str | None = None) -> int:
 
     out = paths.DOCS_DIR / "RESULTS.md"
     out.write_text(text)
-    print(f"wrote {out.relative_to(paths.ROOT)} from {run_dir.name}")
+    print(f"wrote {paths.display(out)} from {run_dir.name}")
     for chart in made:
-        print(f"wrote {Path(chart['path']).relative_to(paths.ROOT)}")
+        print(f"wrote {paths.display(Path(chart['path']))}")
 
     injected = inject_into_readme(summary, records, hops)
     print(f"{'updated' if injected else 'left alone'} README.md results block")

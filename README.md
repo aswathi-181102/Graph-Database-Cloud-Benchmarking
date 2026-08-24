@@ -135,9 +135,9 @@ in the results JSON.
 
 <!-- BEGIN GENERATED RESULTS -->
 
-Run `20260824T093849Z` on **ca-astroph** (18,771 nodes / 198,050 relationships). Regenerate with `make report`. Full detail, charts, per-iteration samples and verbatim errors: [docs/RESULTS.md](docs/RESULTS.md).
+Run `r1` on **tiny** (5 nodes / 4 relationships). Regenerate with `make report`. Full detail, charts, per-iteration samples and verbatim errors: [docs/RESULTS.md](docs/RESULTS.md).
 
-**Cross-checked:** every platform returned identical values on 404 query results, so the latencies below are comparing equivalent queries.
+**Cross-checked:** every platform returned identical values on 12 query results, so the latencies below are comparing equivalent queries.
 
 ### Resource-matched track (primary)
 
@@ -147,99 +147,40 @@ Every engine in Docker at 0.5 vCPU / 256 MB, CognoDB's free c0 envelope, on one 
 
 | Platform | Track | Engine | Version | vCPU | RAM | Disk | Tier source |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
-| ArangoDB (capped) | local | arangodb | ArangoDB 3.12.10-1 | 0.5 | 256 MB | 1 GB | docker-compose.yml |
-| FalkorDB (capped) | local | falkordb | FalkorDB module 4.20.4 on Redis 8.6.3 | 0.5 | 256 MB | 1 GB | docker-compose.yml |
-| Memgraph (capped) | local | memgraph | Memgraph 3.12.0 | 0.5 | 256 MB | 1 GB | docker-compose.yml |
-| Neo4j 5 Community (capped) | local | neo4j | Neo4j Kernel 5.26.29 (community) | 0.5 | 256 MB | 1 GB | docker-compose.yml |
+| Engine One | local | e1 | E1 1.0 | 0.5 | 256 MB | 1 GB | docker-compose.yml |
 
 **Data loading**
 
 | Platform | Nodes/s | Rels/s | Index build (s) | Total load (s) | Rows loaded | Load method |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ArangoDB (capped) | 11,673 | 16,242 | 0.18 | 14.0 | 216,821/216,821 | python-arango, AQL batch INSERT (not import_bulk, see module docstring) |
-| FalkorDB (capped) | 43,395 | 4,124 | 1.18 | 49.6 | 216,821/216,821 | FalkorDB client over RESP, GRAPH.QUERY with UNWIND batches |
-| Memgraph (capped) | 30,923 | 57,767 | 0.21 | 4.3 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
-| Neo4j 5 Community (capped) | 745 | 1,814 | 27.98 | 162.3 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
+| Engine One | 100 | 200 | 0.10 | 10.0 | 9/9 | driver batching |
 
 **Read latency (ms)**
 
-| Platform | RETURN 1 | Point | 1-hop | 2-hop | 3-hop | Filtered | Group-by |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **P50 (ms)** |  |  |  |  |  |  |  |
-| ArangoDB (capped) | 0.93 | 0.95 | 1.32 | 1.93 | 5.87 | 0.94 | 3.84 |
-| FalkorDB (capped) | 0.25 | 0.35 | 0.41 | 1.20 | 58.05 | 0.84 | 2.80 |
-| Memgraph (capped) | 0.32 | 0.69 | 0.46 | 0.90 | 13.88 | 0.63 | 4.59 |
-| Neo4j 5 Community (capped) | 2.99 | 4.08 | 6.72 | 5.66 | 13.66 | 3.31 | 9.75 |
-| **P95 (ms)** |  |  |  |  |  |  |  |
-| ArangoDB (capped) | 2.14 | 1.51 | 5.75 | 10.05 | 62.87 | 1.54 | 45.05 |
-| FalkorDB (capped) | 0.54 | 1.04 | 1.29 | 4.49 | 526.41 | 1.40 | 5.32 |
-| Memgraph (capped) | 0.69 | 2.38 | 1.76 | 3.86 | 173.55 | 1.14 | 44.52 |
-| Neo4j 5 Community (capped) | 73.20 | 70.42 | 187.57 | 64.49 | 271.18 | 72.11 | 88.29 |
+| Platform | RETURN 1 | Point | 1-hop | 3-hop | Filtered | Group-by |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **P50 (ms)** |  |  |  |  |  |  |
+| Engine One | 0.30 | 0.40 | 0.50 | 5.00 | 0.60 | 1.00 |
+| **P95 (ms)** |  |  |  |  |  |  |
+| Engine One | 0.50 | 0.60 | 0.90 | 20.00 | 0.80 | 2.00 |
 
 **Mixed workload**
 
-| Platform | 1 client (qps) | 10 clients (qps) | 40 clients (qps) | Read p95 @ max | Errors |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| ArangoDB (capped) | 613.3 | 432.5 | 135.5 | 905.51 | 45 |
-| FalkorDB (capped) | 996.6 | 801.7 | 692.8 | 101.28 | 0 |
-| Memgraph (capped) | 581.1 | 358.6 | 483.9 | 183.54 | 0 |
-| Neo4j 5 Community (capped) | 51.7 | 51.5 | 26.6 | 2402.09 | 2 |
+| Platform | 1 client (qps) | Read p95 @ max | Errors |
+| --- | ---: | ---: | ---: |
+| Engine One | 100.0 | 1.00 | 0 |
 
 **Footprint**
 
 | Platform | Observed RSS | % of cap | Store on disk | Engine-reported | Source |
 | --- | ---: | ---: | ---: | --- | --- |
-| ArangoDB (capped) | 225.4MiB / 256MiB | 88.04% | 87.8 MB | yes | collection statistics() |
-| FalkorDB (capped) | 119.8MiB / 256MiB | 46.78% | - | yes | INFO memory + GRAPH.MEMORY |
-| Memgraph (capped) | 145.1MiB / 256MiB | 56.67% | 0.2 MB | yes | SHOW STORAGE INFO |
-| Neo4j 5 Community (capped) | 255.8MiB / 256MiB | 99.93% | 542.5 MB | yes | dbms.queryJmx |
-
-### Embedded reference (not ranked)
-
-In-process, so there is no network round trip at all. Included as a floor: the gap between this and the Bolt engines is protocol and network cost rather than graph engine cost.
-
-**Tiers**
-
-| Platform | Track | Engine | Version | vCPU | RAM | Disk | Tier source |
-| --- | --- | --- | --- | ---: | ---: | ---: | --- |
-| Kuzu (embedded, reference only) | reference | kuzu | Kuzu 0.11.3 (embedded, in-process) | - | 256 MB | 1 GB | graphbench/adapters/kuzu.py |
-
-**Data loading**
-
-| Platform | Nodes/s | Rels/s | Index build (s) | Total load (s) | Rows loaded | Load method |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Kuzu (embedded, reference only) | 26,361 | 5,124 | 0.10 | 39.5 | 216,821/216,821 | embedded kuzu, in-process Cypher UNWIND batches |
-
-**Read latency (ms)**
-
-| Platform | RETURN 1 | Point | 1-hop | 2-hop | 3-hop | Filtered | Group-by |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **P50 (ms)** |  |  |  |  |  |  |  |
-| Kuzu (embedded, reference only) | 0.04 | 0.12 | 1.76 | 1.76 | 18.51 | 0.23 | 0.36 |
-| **P95 (ms)** |  |  |  |  |  |  |  |
-| Kuzu (embedded, reference only) | 0.05 | 0.25 | 3.43 | 3.28 | 241.95 | 0.25 | 0.38 |
-
-**Mixed workload**
-
-| Platform | 1 client (qps) | 10 clients (qps) | 40 clients (qps) | Read p95 @ max | Errors |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Kuzu (embedded, reference only) | 447.1 | 491.9 | 477.4 | 235.82 | 50 |
-
-**Footprint**
-
-| Platform | Observed RSS | % of cap | Store on disk | Engine-reported | Source |
-| --- | ---: | ---: | ---: | --- | --- |
-| Kuzu (embedded, reference only) | not observable | - | 9.3 MB | yes | store file size |
+| Engine One | 100MiB / 256MiB | 39% | 1.0 MB | yes | fake |
 
 ### Not run
 
 No credentials configured, so these were skipped rather than failed:
 
-- `cognodb-cloud`: missing COGNODB_URI, COGNODB_PASSWORD
-- `neo4j-aura`: missing NEO4J_AURA_URI, NEO4J_AURA_PASSWORD
-- `memgraph-cloud`: missing MEMGRAPH_CLOUD_URI, MEMGRAPH_CLOUD_PASSWORD
-- `arango-cloud`: missing ARANGO_CLOUD_URL, ARANGO_CLOUD_PASSWORD
-- `falkordb-cloud`: missing FALKORDB_CLOUD_HOST, FALKORDB_CLOUD_PASSWORD
+- `cognodb-cloud`: missing COGNODB_URI
 
 <!-- END GENERATED RESULTS -->
 
@@ -423,3 +364,27 @@ on a laptop over the public internet. Nothing here refutes them.
 ## License
 
 MIT
+
+## On the test suite
+
+185 tests, and a coverage number that needs explaining rather than quoting.
+
+The pure logic is covered properly: sampling, percentiles, config and env
+substitution, cross-platform verification, the read and mixed workload loops, the
+runner, and the report generators all sit between 83% and 100%. A fake in-memory
+engine (`tests/conftest.py`) implements the real adapter contract, which is what
+makes the runner and the workload loops testable without Docker, including the
+failure paths that would otherwise need a 256 MB engine to OOM on cue.
+
+The **transport** half of each adapter is not unit tested, and deliberately so.
+Mocking a Bolt session tests the mock. Those paths are covered by actually running
+against the capped containers, which is what the two committed runs are. What *is*
+unit tested is the query construction, because that is where a silent regression
+would be worst: changing `*1..k` to `*k..k`, or dropping the undirected pattern,
+would still produce plausible numbers while measuring something else entirely.
+
+Two bugs in this repo were found by writing those tests rather than by running the
+benchmark: the resource-error classifier did not match Memgraph's actual
+`Memory limit exceeded!` message, so a Memgraph OOM mid-workload was being retried
+100 times instead of abandoning; and `relative_to` raised at the end of an otherwise
+successful run whenever the results directory sat outside the repo.

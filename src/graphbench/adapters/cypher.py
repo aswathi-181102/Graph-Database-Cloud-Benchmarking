@@ -6,6 +6,7 @@ engine-specific, since that is where the dialects actually diverge.
 """
 
 from graphbench.adapters.base import Adapter
+from graphbench.errors import is_resource_error
 
 # Label used only by the mixed workload's writes, so they can be found and
 # deleted without touching the loaded graph.
@@ -150,7 +151,7 @@ class CypherAdapter(Adapter):
             try:
                 rows = self.run(self.q_wipe_batch, {"limit": batch})
             except Exception as exc:  # noqa: BLE001
-                if not _is_resource_error(exc) or batch <= self.WIPE_BATCH_FLOOR:
+                if not is_resource_error(exc) or batch <= self.WIPE_BATCH_FLOOR:
                     raise
                 # The OOM kills the connection too, so the session has to go first
                 # or every retry fails on a defunct socket.
@@ -165,22 +166,3 @@ class CypherAdapter(Adapter):
     def reset_connection(self) -> None:
         """Drop cached connection state. Overridden by transports that cache it."""
         return
-
-
-def _is_resource_error(exc: BaseException) -> bool:
-    """Engine out of memory, rather than a real bug?
-
-    Matching message text is ugly, but these engines report the same condition
-    under at least four different exception types.
-    """
-    text = f"{type(exc).__name__} {exc}".lower()
-    needles = (
-        "outofmemory",
-        "out of memory",
-        "not enough memory",
-        "heap space",
-        "memory limit",
-        "defunct",
-        "connection",
-    )
-    return any(n in text for n in needles)
