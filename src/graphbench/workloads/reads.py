@@ -11,6 +11,7 @@ from typing import Any
 
 from graphbench.adapters.base import Adapter
 from graphbench.config import Workloads
+from graphbench.errors import is_resource_error
 from graphbench.metrics import LatencySeries, Timer
 
 
@@ -104,13 +105,11 @@ def _is_fatal(exc: BaseException) -> bool:
     """Abandon the workload, or count it and continue?
 
     After an OOM or a dead connection the engine cannot give meaningful timings, so
-    continuing would fill the percentiles with retry noise.
+    continuing would fill the percentiles with retry noise. Shares its classifier
+    with the wipe retry loop, because the two had already drifted apart once and the
+    read side was missing Memgraph's phrasing.
     """
-    text = f"{type(exc).__name__} {exc}".lower()
-    return any(
-        n in text
-        for n in ("outofmemory", "out of memory", "not enough memory", "heap space", "defunct")
-    )
+    return is_resource_error(exc)
 
 
 def all_read_workloads(adapter: Adapter, workloads: Workloads) -> list[ReadResult]:
