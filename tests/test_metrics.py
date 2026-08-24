@@ -40,8 +40,10 @@ def test_percentile_does_not_index_below_zero():
 
 
 def test_samples_are_not_reordered_in_place():
+    # percentile() sorts a copy; sorting in place would silently reorder the raw
+    # samples that get written to the results file.
     s = series([3, 1, 2])
-    s.p50
+    assert s.p50 == 2
     assert s.samples == [3, 1, 2]
 
 
