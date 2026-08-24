@@ -111,14 +111,17 @@ def container_stats(name: str, data_dir: str = "") -> dict[str, Any]:
         "cpu_percent": parts[2],
     }
     if data_dir:
-        # du -sb is GNU; the alpine-based images ship BusyBox, which needs -sk and
-        # reports kilobytes. Try both rather than guessing per image.
-        raw = _cmd(["docker", "exec", name, "sh", "-c", f"du -sb {data_dir} 2>/dev/null | cut -f1"])
+        # -L follows symlinks: falkordb ships /data as a link to
+        # /var/lib/falkordb/data, and without -L du measures the link itself.
+        # -b is GNU; the BusyBox images need -k and report kilobytes, so try both.
+        raw = _cmd(
+            ["docker", "exec", name, "sh", "-c", f"du -sbL {data_dir} 2>/dev/null | cut -f1"]
+        )
         if raw and raw.isdigit():
             stats["data_dir_bytes"] = int(raw)
         else:
             kb = _cmd(
-                ["docker", "exec", name, "sh", "-c", f"du -sk {data_dir} 2>/dev/null | cut -f1"]
+                ["docker", "exec", name, "sh", "-c", f"du -skL {data_dir} 2>/dev/null | cut -f1"]
             )
             if kb and kb.isdigit():
                 stats["data_dir_bytes"] = int(kb) * 1024

@@ -219,10 +219,17 @@ and a worse benchmark.
 - **FalkorDB has no unique constraint on `key`**, only an index, because its
   uniqueness enforcement is a separate command not available on every build. So it
   does slightly less work than Neo4j on the node phase.
-- **Memgraph runs with durability off** (`--storage-wal-enabled=false`, no
-  snapshots), which is what Memgraph documents for query benchmarking. Neo4j and
-  ArangoDB are left durable. This is a genuine asymmetry and it is repeated next
-  to Memgraph's numbers.
+- **Memgraph and FalkorDB both run non-durable.** Memgraph has
+  `--storage-wal-enabled=false` and no snapshots, which is what Memgraph documents
+  for query benchmarking. FalkorDB runs with `--save ''`, so Redis never writes an
+  RDB. Neo4j and ArangoDB are left durable.
+
+  This is the largest single asymmetry in the study and it is visible in the
+  footprint table rather than only described here: FalkorDB writes 0 bytes to disk
+  and Neo4j writes 542 MB, over half of the declared 1 GB allowance, most of it
+  transaction logs. Two of these engines are being asked to guarantee durability
+  and two are not, and that buys the non-durable pair both write throughput and
+  disk.
 
 ## 6. Percentiles, not averages
 

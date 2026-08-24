@@ -240,16 +240,19 @@ class ArangoAdapter(Adapter):
         """One of the few engines here that reports real stored-size figures."""
         try:
             db = self._db()
-            out: dict[str, Any] = {"observable": True, "source": "collection figures()"}
+            # statistics(), not figures(): python-arango 8.x renamed it, and the
+            # first run of this reported "not observable" purely because of that.
+            out: dict[str, Any] = {"observable": True, "source": "collection statistics()"}
             for name in (NODES, EDGES):
-                figures = db.collection(name).figures()
+                stats = db.collection(name).statistics()
+                figures = stats.get("figures", stats)
                 out[name] = {
-                    "documents": figures.get("count"),
+                    "documents": stats.get("count"),
                     "documents_size_bytes": figures.get("documentsSize"),
-                    "indexes": figures.get("figures", {}).get("indexes"),
+                    "indexes": figures.get("indexes"),
                 }
             if self._write_needs_fallback:
                 out["write_path"] = "two AQL statements (server rejected multi-modification query)"
             return out
         except Exception as exc:  # noqa: BLE001
-            return {"observable": False, "reason": f"figures() failed: {exc}"}
+            return {"observable": False, "reason": f"statistics() failed: {exc}"}

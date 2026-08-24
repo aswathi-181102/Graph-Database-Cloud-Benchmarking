@@ -185,7 +185,9 @@ def footprint_table(records: list[dict]) -> str:
     for r in records:
         container = r.get("container") or {}
         footprint = r.get("footprint") or {}
-        disk = container.get("data_dir_bytes")
+        # Embedded engines have no container, but they do report their own store
+        # size, and dropping it would print a dash next to a number we have.
+        disk = container.get("data_dir_bytes") or footprint.get("store_bytes")
         rows.append(
             [
                 r["platform"]["display"],
