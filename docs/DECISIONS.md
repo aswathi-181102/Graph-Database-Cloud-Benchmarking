@@ -26,16 +26,16 @@ envelope to test it in.
 
 **Rejected:**
 
-- **Amazon Neptune** — no free tier at all. Matching it to 256 MB means paying for
+- **Amazon Neptune** - no free tier at all. Matching it to 256 MB means paying for
   an instance and then handicapping it, which is worse science than omitting it.
-- **NebulaGraph** — needs metad, storaged and graphd as separate processes. They
+- **NebulaGraph** - needs metad, storaged and graphd as separate processes. They
   do not fit in 256 MB together, so any result measures the cap, not Nebula.
-- **JanusGraph** — JVM plus a separate storage backend (Cassandra or BerkeleyDB).
+- **JanusGraph** - JVM plus a separate storage backend (Cassandra or BerkeleyDB).
   Same problem, worse.
-- **TigerGraph** — GSQL not Cypher, tuned for OLAP fan-out, and the free tier
+- **TigerGraph** - GSQL not Cypher, tuned for OLAP fan-out, and the free tier
   ships far more than 256 MB. Would need either an unfair tier or a rewritten
   workload.
-- **Dgraph** — not Cypher, and the free cloud tier is gone.
+- **Dgraph** - not Cypher, and the free cloud tier is gone.
 
 ## 2. Two tracks, never mixed in one ranking
 
@@ -46,11 +46,11 @@ them can be dialled down to CognoDB's 0.5 vCPU / 256 MB.
 
 So there are two tracks and they are never combined into one league table:
 
-- **local** — Docker containers, all capped identically to CognoDB's c0. This is
+- **local** - Docker containers, all capped identically to CognoDB's c0. This is
   the resource fair comparison and the primary result.
-- **cloud** — managed free tiers as they actually ship, specs recorded as
+- **cloud** - managed free tiers as they actually ship, specs recorded as
   advertised, explicitly labelled not resource equal.
-- **reference** — Kùzu, embedded, not ranked at all.
+- **reference** - Kùzu, embedded, not ranked at all.
 
 CognoDB has no self-hosted build, so it can only appear in the cloud track. That
 is the one unavoidable asymmetry in the study.
@@ -69,7 +69,7 @@ anchors the zero-network end of the same scale.
 Requirements it had to meet: ≥100k relationships, fits 256 MB with indexes,
 public and citable, real degree skew.
 
-18,771 nodes / 198,050 edges after dedupe. Sits inside the suggested 100k–500k
+18,771 nodes / 198,050 edges after dedupe. Sits inside the suggested 100k-500k
 band, 1.5 MB download so a reproduction costs seconds, and the degree
 distribution is genuinely heavy tailed (mean 21, max 504) which is what makes
 2-hop and 3-hop diverge instead of all looking the same. Being co-authorship it is
@@ -82,11 +82,11 @@ naturally undirected, so one Cypher pattern works without direction fudging.
   biggest threat to fairness in the study. Kept in the registry as a sampled
   option, with a working sampler, so the claim "we could have used it" is backed
   by code.
-- **Neo4j movies graph** — ~250 relationships. Three orders of magnitude short.
-- **LDBC SNB** — the academically correct answer. Even SF1 overshoots 256 MB, and
+- **Neo4j movies graph** - ~250 relationships. Three orders of magnitude short.
+- **LDBC SNB** - the academically correct answer. Even SF1 overshoots 256 MB, and
   the generator is a JVM/Spark toolchain that would wreck the clone-and-rerun
   property this repo is graded on.
-- **cit-HepPh** (421k edges) — a real contender and would have been valid. Passed
+- **cit-HepPh** (421k edges) - a real contender and would have been valid. Passed
   on because at 421k edges plus indexes there is a genuine risk of hitting the
   256 MB ceiling on some engines, turning "we measured latency" into "we measured
   which engine OOMs first". Interesting, but a different experiment.
@@ -96,7 +96,7 @@ naturally undirected, so one Cypher pattern works without direction fudging.
 SNAP advertises 18,772 nodes / 198,110 edges. We measure 18,771 / 198,050.
 Verified against the raw file rather than assumed: there are exactly 60 self
 loops, and the one extra node they count (id 64582) appears only in a self loop.
-Self loops are dropped because they make "1-hop neighbours" ambiguous — some
+Self loops are dropped because they make "1-hop neighbours" ambiguous - some
 engines return the start node, some do not, and the resulting mismatch looks like
 a correctness bug when it is a data artifact.
 
@@ -120,7 +120,7 @@ row" and measures result streaming. Two buckets is basically a count. 32 over
 18.7k nodes gives ~590 each, which is a realistic group-by shape and still forces
 a full label scan.
 
-### Start nodes come from a degree band (5–50), not uniform random
+### Start nodes come from a degree band (5-50), not uniform random
 
 Max degree here is 504. A 3-hop expansion from a hub reaches most of the graph,
 which on a 256 MB instance measures the OOM killer rather than the traversal.
@@ -219,10 +219,17 @@ and a worse benchmark.
 - **FalkorDB has no unique constraint on `key`**, only an index, because its
   uniqueness enforcement is a separate command not available on every build. So it
   does slightly less work than Neo4j on the node phase.
-- **Memgraph runs with durability off** (`--storage-wal-enabled=false`, no
-  snapshots), which is what Memgraph documents for query benchmarking. Neo4j and
-  ArangoDB are left durable. This is a genuine asymmetry and it is repeated next
-  to Memgraph's numbers.
+- **Memgraph and FalkorDB both run non-durable.** Memgraph has
+  `--storage-wal-enabled=false` and no snapshots, which is what Memgraph documents
+  for query benchmarking. FalkorDB runs with `--save ''`, so Redis never writes an
+  RDB. Neo4j and ArangoDB are left durable.
+
+  This is the largest single asymmetry in the study and it is visible in the
+  footprint table rather than only described here: FalkorDB writes 0 bytes to disk
+  and Neo4j writes 542 MB, over half of the declared 1 GB allowance, most of it
+  transaction logs. Two of these engines are being asked to guarantee durability
+  and two are not, and that buys the non-durable pair both write throughput and
+  disk.
 
 ## 6. Percentiles, not averages
 
@@ -233,7 +240,7 @@ neither case. p50 is what a query usually costs, p95 is what the bad ones cost,
 and the gap between them is the interesting part.
 
 Nearest-rank, no interpolation, so p95 of 100 samples is literally the 95th
-smallest observation — something that actually happened, rather than a weighted
+smallest observation - something that actually happened, rather than a weighted
 average of two things that did. Same convention as HdrHistogram. The cost is
 resolution: with 100 samples the granularity of p95 is one sample, which is why
 the iteration count is not lower.
@@ -251,7 +258,7 @@ statistics cannot be argued with, which is not a virtue.
 questions and mixing them into one average answers neither.
 
 The first warm-up call is kept separately as `first_call_ms`. It is **not a true
-cold start** — the engine has just finished ingesting the data, so its caches are
+cold start** - the engine has just finished ingesting the data, so its caches are
 hot from writing. It captures plan compilation and index warm-up only, and is
 labelled that way. A true cold start requires restarting the engine.
 
@@ -296,7 +303,7 @@ and the loop continues.
 `wipe()` is adaptive because of a real failure: at 10,000 nodes per
 `DETACH DELETE` batch, Neo4j died with
 `Neo.TransientError.General.OutOfMemoryError: Java heap space` and dropped the
-connection — deleting 10,000 nodes means detaching over 100k relationships in one
+connection - deleting 10,000 nodes means detaching over 100k relationships in one
 transaction against a 96 MB heap. It now starts at 2,000 and halves to a floor of
 100 on a resource error, resetting the session first because the OOM kills the
 connection too. Wipe is not a measured phase, so a smaller batch costs only wall

@@ -1,7 +1,10 @@
 .PHONY: setup dataset doctor bench report test lint up down clean
 
+# 3.13 rather than whatever python3 points at: see pyproject for the wheel gap.
+PYTHON ?= python3.13
+
 setup:
-	python3 -m venv .venv
+	$(PYTHON) -m venv .venv
 	.venv/bin/pip install -U pip
 	.venv/bin/pip install -e ".[dev]"
 

@@ -143,6 +143,7 @@ def prepare(ds: Dataset, seed: int = DEFAULT_SEED, force: bool = False) -> Path:
         "degree_mean": round(sum(deg_values) / len(deg_values), 3),
         "cohorts": N_COHORTS,
         "start_nodes": len(starts),
+        "degree_band": list(DEGREE_BAND),
         "prepared_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

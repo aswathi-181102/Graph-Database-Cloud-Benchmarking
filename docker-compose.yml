@@ -56,6 +56,10 @@ services:
       # is repeated next to Memgraph's numbers in the results.
       - "--storage-snapshot-interval-sec=0"
       - "--storage-wal-enabled=false"
+      # Memgraph snapshots on exit even with periodic snapshots and the WAL off, so
+      # without this a restarted container recovers the previous run's graph, and
+      # the next load starts with the memory budget already spent.
+      - "--storage-snapshot-on-exit=false"
       - "--telemetry-enabled=false"
       - "--log-level=WARNING"
     ports:

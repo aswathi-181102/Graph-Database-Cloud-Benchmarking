@@ -50,6 +50,14 @@ class Platform:
     track: str
     tier: Tier
     connection: dict[str, Any] = field(default_factory=dict)
+    # Docker container name, local track only. Lets the runner read real RSS from
+    # outside the engine, which is the only honest footprint number for engines
+    # that expose nothing themselves.
+    container: str = ""
+    # docker compose service name, so the runner can destroy and rebuild it
+    service: str = ""
+    # Where the engine keeps its store inside the container, for a du reading.
+    data_dir: str = ""
     # Non-empty means skip this platform.
     missing_env: tuple[str, ...] = ()
 
@@ -134,6 +142,9 @@ def load_platforms(path: Path | None = None) -> list[Platform]:
                 track=entry.get("track", "cloud"),
                 tier=Tier(**tier_data),
                 connection=conn,
+                container=entry.get("container", ""),
+                service=entry.get("service", ""),
+                data_dir=entry.get("data_dir", ""),
                 missing_env=tuple(dict.fromkeys(missing)),  # dedupe, keep order
             )
         )

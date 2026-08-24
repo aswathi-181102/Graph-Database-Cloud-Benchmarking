@@ -2,11 +2,21 @@
 # tuned per engine. Reasoning for each value: docs/DECISIONS.md sections 4-8.
 
 load:
-  # A guess until `graphbench calibrate` has run against the capped containers;
-  # the measured sweep goes in docs/CALIBRATION.md and this changes if it says so.
-  # Too small and per-request overhead dominates, too large and a 256 MB engine
-  # spills, at which point it measures the memory cap and not ingest speed.
-  batch_size: 5000
+  # Measured, not guessed. Full sweep in docs/CALIBRATION.md; total load time by
+  # batch size, "!" meaning a partial load against the memory limit:
+  #
+  #             500    1000    2500    5000   10000
+  #   memgraph   4s      3s      4/6s   13/15s  81s!/13s
+  #   neo4j       -    145s     93s    133s    118s
+  #   arango      -      8s      8s      9s      9s
+  #   falkordb    -     34s     69s    160s     60s
+  #
+  # 1000 because every engine completes there, memgraph has its widest memory
+  # headroom and tightest variance (3.2/3.36s against 4.42/6.13s at 2500), and
+  # falkordb is at its fastest. It costs neo4j 56% over its own optimum
+  # (145s against 93s at 2500), which is a real price paid for using one value
+  # everywhere rather than tuning per engine.
+  batch_size: 1000
 
 reads:
   iterations: 100

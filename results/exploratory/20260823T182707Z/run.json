@@ -1,0 +1,83 @@
+{
+  "run_id": "20260823T182707Z",
+  "started_at": "2026-08-23T18:27:07+00:00",
+  "environment": {
+    "client_os": "Darwin 25.5.0",
+    "client_machine": "arm64",
+    "client_processor": "arm",
+    "client_cpu_count": 8,
+    "client_memory_bytes": 8589934592,
+    "python": "3.14.7",
+    "packages": {
+      "neo4j": "5.28.4",
+      "FalkorDB": "1.7.1",
+      "python-arango": "8.3.3",
+      "kuzu": "not installed"
+    },
+    "docker": "Docker version 29.7.2, build a7dcaa6",
+    "git_commit": "13514b0b1a712f9f0cc9886f333dfc1f460bf3d1",
+    "git_dirty": true
+  },
+  "dataset": {
+    "dataset": "ca-astroph",
+    "source_url": "https://snap.stanford.edu/data/ca-AstroPh.txt.gz",
+    "citation": "J. Leskovec, J. Kleinberg, C. Faloutsos. Graph Evolution: Densification and Shrinking Diameters. ACM TKDD, 2007. SNAP ca-AstroPh.",
+    "raw_file": "ca-AstroPh.txt.gz",
+    "raw_bytes": 1453950,
+    "raw_sha256": "51bf1e2cace269b884481a8502474efa67c0fd01d998ff7f5a154d7d3e527f27",
+    "undirected": true,
+    "node_label": "Author",
+    "rel_type": "COAUTHOR",
+    "nodes": 18771,
+    "edges": 198050,
+    "sampled": false,
+    "target_edges": null,
+    "seed": 7919,
+    "degree_min": 1,
+    "degree_max": 504,
+    "degree_mean": 21.102,
+    "cohorts": 32,
+    "start_nodes": 256,
+    "prepared_at": "2026-08-23T16:33:39+00:00"
+  },
+  "workloads": {
+    "batch_size": 5000,
+    "iterations": 100,
+    "warmup": 20,
+    "hops": [
+      1,
+      2,
+      3
+    ],
+    "timeout_s": 30,
+    "concurrency": [
+      1,
+      10,
+      40
+    ],
+    "duration_s": 30,
+    "read_ratio": 0.9,
+    "cohort": 7,
+    "min_degree": 10,
+    "mixed_skipped": true,
+    "restart_local_containers": true
+  },
+  "skipped": [],
+  "platforms": [
+    {
+      "id": "memgraph-local",
+      "status": "ok",
+      "duration_s": 32.9,
+      "errors": 0
+    }
+  ],
+  "verification": {
+    "compared": 0,
+    "agree": true,
+    "mismatches": [],
+    "expectation_failures": [],
+    "monotonic_failures": [],
+    "clean": true
+  },
+  "finished_at": "2026-08-23T18:27:40+00:00"
+}
