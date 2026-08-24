@@ -9,6 +9,7 @@ question "did it finish at all" turns out to matter more than any latency number
 and three separate attempts at this benchmark produced fast, clean, completely
 wrong results before the correctness checks caught them.
 
+- **[Walkthrough](docs/WALKTHROUGH.md) - start here: what this is, how it works file by file, and the six bugs that shaped it**
 - [Results](docs/RESULTS.md) - full matrix, charts, per-iteration samples, verbatim errors
 - [Analysis](docs/ANALYSIS.md) - what the numbers show and why, plus what I would do differently
 - [Variance](docs/VARIANCE.md) - two identical runs diffed, and which metrics survive repetition
