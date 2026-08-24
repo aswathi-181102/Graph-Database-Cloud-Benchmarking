@@ -2,12 +2,16 @@
 name = "graphbench"
 version = "0.1.0"
 description = "Benchmark harness comparing CognoDB Cloud against other managed graph databases"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 readme = "README.md"
 license = { text = "MIT" }
 
 # exact pins: if the client driver moves, the latency numbers stop being
-# comparable to the ones already in results/
+# comparable to the ones already in results/.
+#
+# Upper bound on python is not caution, it is a wheel gap: kuzu 0.11.3 ships no
+# macOS cp314 wheel and building it from source fails. Pinning to a python where
+# every dependency has a wheel is worth more here than being on the newest one.
 dependencies = [
     "neo4j==5.28.4",
     "FalkorDB==1.7.1",
@@ -15,6 +19,7 @@ dependencies = [
     "PyYAML==6.0.3",
     "python-dotenv==1.2.3",
     "matplotlib==3.10.9",
+    "kuzu==0.11.3",
 ]
 
 [project.optional-dependencies]
