@@ -1,0 +1,3149 @@
+{
+  "run_id": "20260823T183227Z",
+  "started_at": "2026-08-23T18:32:27+00:00",
+  "environment": {
+    "client_os": "Darwin 25.5.0",
+    "client_machine": "arm64",
+    "client_processor": "arm",
+    "client_cpu_count": 8,
+    "client_memory_bytes": 8589934592,
+    "python": "3.14.7",
+    "packages": {
+      "neo4j": "5.28.4",
+      "FalkorDB": "1.7.1",
+      "python-arango": "8.3.3",
+      "kuzu": "not installed"
+    },
+    "docker": "Docker version 29.7.2, build a7dcaa6",
+    "git_commit": "c6b8b7324d446ba46cf25d8ffcf26838e5bd2d35",
+    "git_dirty": true
+  },
+  "dataset": {
+    "dataset": "ca-astroph",
+    "source_url": "https://snap.stanford.edu/data/ca-AstroPh.txt.gz",
+    "citation": "J. Leskovec, J. Kleinberg, C. Faloutsos. Graph Evolution: Densification and Shrinking Diameters. ACM TKDD, 2007. SNAP ca-AstroPh.",
+    "raw_file": "ca-AstroPh.txt.gz",
+    "raw_bytes": 1453950,
+    "raw_sha256": "51bf1e2cace269b884481a8502474efa67c0fd01d998ff7f5a154d7d3e527f27",
+    "undirected": true,
+    "node_label": "Author",
+    "rel_type": "COAUTHOR",
+    "nodes": 18771,
+    "edges": 198050,
+    "sampled": false,
+    "target_edges": null,
+    "seed": 7919,
+    "degree_min": 1,
+    "degree_max": 504,
+    "degree_mean": 21.102,
+    "cohorts": 32,
+    "start_nodes": 256,
+    "degree_band": [
+      5,
+      50
+    ],
+    "prepared_at": "2026-08-23T18:30:37+00:00"
+  },
+  "workloads": {
+    "batch_size": 5000,
+    "iterations": 100,
+    "warmup": 20,
+    "hops": [
+      1,
+      2,
+      3
+    ],
+    "timeout_s": 30,
+    "concurrency": [
+      1,
+      10,
+      40
+    ],
+    "duration_s": 30,
+    "read_ratio": 0.9,
+    "cohort": 7,
+    "min_degree": 10,
+    "mixed_skipped": false,
+    "restart_local_containers": true
+  },
+  "skipped": [],
+  "platforms": [
+    {
+      "id": "neo4j-local",
+      "status": "ok",
+      "duration_s": 388.7,
+      "errors": 0
+    },
+    {
+      "id": "memgraph-local",
+      "status": "partial",
+      "duration_s": 108.3,
+      "errors": 5
+    },
+    {
+      "id": "arango-local",
+      "status": "ok",
+      "duration_s": 120.2,
+      "errors": 0
+    },
+    {
+      "id": "falkordb-local",
+      "status": "ok",
+      "duration_s": 191.0,
+      "errors": 0
+    }
+  ],
+  "verification": {
+    "compared": 404,
+    "agree": false,
+    "mismatches": [
+      {
+        "workload": "aggregation_groupby_cohort",
+        "key": "value",
+        "values": {
+          "neo4j-local": 18771,
+          "memgraph-local": 15000,
+          "arango-local": 18771,
+          "falkordb-local": 18771
+        }
+      },
+      {
+        "workload": "aggregation_rel_count",
+        "key": "value",
+        "values": {
+          "neo4j-local": 198050,
+          "memgraph-local": 0,
+          "arango-local": 198050,
+          "falkordb-local": 198050
+        }
+      },
+      {
+        "workload": "filtered_lookup",
+        "key": "value",
+        "values": {
+          "neo4j-local": 294,
+          "memgraph-local": 235,
+          "arango-local": 294,
+          "falkordb-local": 294
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a10347",
+        "values": {
+          "neo4j-local": 8,
+          "memgraph-local": 0,
+          "arango-local": 8,
+          "falkordb-local": 8
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a11085",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a11109",
+        "values": {
+          "neo4j-local": 16,
+          "memgraph-local": 0,
+          "arango-local": 16,
+          "falkordb-local": 16
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a11273",
+        "values": {
+          "neo4j-local": 19,
+          "memgraph-local": 0,
+          "arango-local": 19,
+          "falkordb-local": 19
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a12185",
+        "values": {
+          "neo4j-local": 25,
+          "memgraph-local": 0,
+          "arango-local": 25,
+          "falkordb-local": 25
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a12704",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a12860",
+        "values": {
+          "neo4j-local": 42,
+          "memgraph-local": 0,
+          "arango-local": 42,
+          "falkordb-local": 42
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a13254",
+        "values": {
+          "neo4j-local": 9,
+          "memgraph-local": 0,
+          "arango-local": 9,
+          "falkordb-local": 9
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a14910",
+        "values": {
+          "neo4j-local": 13,
+          "memgraph-local": 0,
+          "arango-local": 13,
+          "falkordb-local": 13
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a15309",
+        "values": {
+          "neo4j-local": 36,
+          "memgraph-local": 0,
+          "arango-local": 36,
+          "falkordb-local": 36
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a15613",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a16221",
+        "values": {
+          "neo4j-local": 13,
+          "memgraph-local": 0,
+          "arango-local": 13,
+          "falkordb-local": 13
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a16267",
+        "values": {
+          "neo4j-local": 28,
+          "memgraph-local": 0,
+          "arango-local": 28,
+          "falkordb-local": 28
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a16336",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a18344",
+        "values": {
+          "neo4j-local": 13,
+          "memgraph-local": 0,
+          "arango-local": 13,
+          "falkordb-local": 13
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a18507",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a19417",
+        "values": {
+          "neo4j-local": 7,
+          "memgraph-local": 0,
+          "arango-local": 7,
+          "falkordb-local": 7
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a19461",
+        "values": {
+          "neo4j-local": 10,
+          "memgraph-local": 0,
+          "arango-local": 10,
+          "falkordb-local": 10
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a21369",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a22150",
+        "values": {
+          "neo4j-local": 42,
+          "memgraph-local": 0,
+          "arango-local": 42,
+          "falkordb-local": 42
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a22280",
+        "values": {
+          "neo4j-local": 26,
+          "memgraph-local": 0,
+          "arango-local": 26,
+          "falkordb-local": 26
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a23265",
+        "values": {
+          "neo4j-local": 15,
+          "memgraph-local": 0,
+          "arango-local": 15,
+          "falkordb-local": 15
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a24670",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a25211",
+        "values": {
+          "neo4j-local": 13,
+          "memgraph-local": 0,
+          "arango-local": 13,
+          "falkordb-local": 13
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a25373",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a26065",
+        "values": {
+          "neo4j-local": 18,
+          "memgraph-local": 0,
+          "arango-local": 18,
+          "falkordb-local": 18
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a26797",
+        "values": {
+          "neo4j-local": 23,
+          "memgraph-local": 0,
+          "arango-local": 23,
+          "falkordb-local": 23
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a26915",
+        "values": {
+          "neo4j-local": 37,
+          "memgraph-local": 0,
+          "arango-local": 37,
+          "falkordb-local": 37
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27233",
+        "values": {
+          "neo4j-local": 28,
+          "memgraph-local": 0,
+          "arango-local": 28,
+          "falkordb-local": 28
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27245",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27248",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27348",
+        "values": {
+          "neo4j-local": 46,
+          "memgraph-local": 0,
+          "arango-local": 46,
+          "falkordb-local": 46
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27349",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27587",
+        "values": {
+          "neo4j-local": 8,
+          "memgraph-local": 0,
+          "arango-local": 8,
+          "falkordb-local": 8
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27633",
+        "values": {
+          "neo4j-local": 23,
+          "memgraph-local": 0,
+          "arango-local": 23,
+          "falkordb-local": 23
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a27905",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a28797",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a28887",
+        "values": {
+          "neo4j-local": 37,
+          "memgraph-local": 0,
+          "arango-local": 37,
+          "falkordb-local": 37
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a29997",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a30790",
+        "values": {
+          "neo4j-local": 19,
+          "memgraph-local": 0,
+          "arango-local": 19,
+          "falkordb-local": 19
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a30952",
+        "values": {
+          "neo4j-local": 13,
+          "memgraph-local": 0,
+          "arango-local": 13,
+          "falkordb-local": 13
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a31561",
+        "values": {
+          "neo4j-local": 43,
+          "memgraph-local": 0,
+          "arango-local": 43,
+          "falkordb-local": 43
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a31564",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a32009",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a34097",
+        "values": {
+          "neo4j-local": 39,
+          "memgraph-local": 0,
+          "arango-local": 39,
+          "falkordb-local": 39
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a34417",
+        "values": {
+          "neo4j-local": 39,
+          "memgraph-local": 0,
+          "arango-local": 39,
+          "falkordb-local": 39
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a34880",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a34881",
+        "values": {
+          "neo4j-local": 15,
+          "memgraph-local": 0,
+          "arango-local": 15,
+          "falkordb-local": 15
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a36314",
+        "values": {
+          "neo4j-local": 8,
+          "memgraph-local": 0,
+          "arango-local": 8,
+          "falkordb-local": 8
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a38219",
+        "values": {
+          "neo4j-local": 25,
+          "memgraph-local": 0,
+          "arango-local": 25,
+          "falkordb-local": 25
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a38322",
+        "values": {
+          "neo4j-local": 28,
+          "memgraph-local": 0,
+          "arango-local": 28,
+          "falkordb-local": 28
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a38556",
+        "values": {
+          "neo4j-local": 50,
+          "memgraph-local": 0,
+          "arango-local": 50,
+          "falkordb-local": 50
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a38806",
+        "values": {
+          "neo4j-local": 11,
+          "memgraph-local": 0,
+          "arango-local": 11,
+          "falkordb-local": 11
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a39542",
+        "values": {
+          "neo4j-local": 8,
+          "memgraph-local": 0,
+          "arango-local": 8,
+          "falkordb-local": 8
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a40405",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a40745",
+        "values": {
+          "neo4j-local": 31,
+          "memgraph-local": 0,
+          "arango-local": 31,
+          "falkordb-local": 31
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a41946",
+        "values": {
+          "neo4j-local": 10,
+          "memgraph-local": 0,
+          "arango-local": 10,
+          "falkordb-local": 10
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a41961",
+        "values": {
+          "neo4j-local": 7,
+          "memgraph-local": 0,
+          "arango-local": 7,
+          "falkordb-local": 7
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a42444",
+        "values": {
+          "neo4j-local": 20,
+          "memgraph-local": 0,
+          "arango-local": 20,
+          "falkordb-local": 20
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a42791",
+        "values": {
+          "neo4j-local": 15,
+          "memgraph-local": 0,
+          "arango-local": 15,
+          "falkordb-local": 15
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a43002",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a44495",
+        "values": {
+          "neo4j-local": 24,
+          "memgraph-local": 0,
+          "arango-local": 24,
+          "falkordb-local": 24
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a48014",
+        "values": {
+          "neo4j-local": 11,
+          "memgraph-local": 0,
+          "arango-local": 11,
+          "falkordb-local": 11
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a48362",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a48448",
+        "values": {
+          "neo4j-local": 7,
+          "memgraph-local": 0,
+          "arango-local": 7,
+          "falkordb-local": 7
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a48879",
+        "values": {
+          "neo4j-local": 13,
+          "memgraph-local": 0,
+          "arango-local": 13,
+          "falkordb-local": 13
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a49970",
+        "values": {
+          "neo4j-local": 19,
+          "memgraph-local": 0,
+          "arango-local": 19,
+          "falkordb-local": 19
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a50470",
+        "values": {
+          "neo4j-local": 23,
+          "memgraph-local": 0,
+          "arango-local": 23,
+          "falkordb-local": 23
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a50820",
+        "values": {
+          "neo4j-local": 25,
+          "memgraph-local": 0,
+          "arango-local": 25,
+          "falkordb-local": 25
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a52084",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a52480",
+        "values": {
+          "neo4j-local": 27,
+          "memgraph-local": 0,
+          "arango-local": 27,
+          "falkordb-local": 27
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a52982",
+        "values": {
+          "neo4j-local": 8,
+          "memgraph-local": 0,
+          "arango-local": 8,
+          "falkordb-local": 8
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a53942",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a54179",
+        "values": {
+          "neo4j-local": 5,
+          "memgraph-local": 0,
+          "arango-local": 5,
+          "falkordb-local": 5
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a54904",
+        "values": {
+          "neo4j-local": 11,
+          "memgraph-local": 0,
+          "arango-local": 11,
+          "falkordb-local": 11
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a55345",
+        "values": {
+          "neo4j-local": 14,
+          "memgraph-local": 0,
+          "arango-local": 14,
+          "falkordb-local": 14
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a55506",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a57982",
+        "values": {
+          "neo4j-local": 7,
+          "memgraph-local": 0,
+          "arango-local": 7,
+          "falkordb-local": 7
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a58155",
+        "values": {
+          "neo4j-local": 16,
+          "memgraph-local": 0,
+          "arango-local": 16,
+          "falkordb-local": 16
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a58390",
+        "values": {
+          "neo4j-local": 6,
+          "memgraph-local": 0,
+          "arango-local": 6,
+          "falkordb-local": 6
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a58649",
+        "values": {
+          "neo4j-local": 22,
+          "memgraph-local": 0,
+          "arango-local": 22,
+          "falkordb-local": 22
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a59624",
+        "values": {
+          "neo4j-local": 10,
+          "memgraph-local": 0,
+          "arango-local": 10,
+          "falkordb-local": 10
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a59716",
+        "values": {
+          "neo4j-local": 22,
+          "memgraph-local": 0,
+          "arango-local": 22,
+          "falkordb-local": 22
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a60116",
+        "values": {
+          "neo4j-local": 14,
+          "memgraph-local": 0,
+          "arango-local": 14,
+          "falkordb-local": 14
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a61345",
+        "values": {
+          "neo4j-local": 18,
+          "memgraph-local": 0,
+          "arango-local": 18,
+          "falkordb-local": 18
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a62017",
+        "values": {
+          "neo4j-local": 8,
+          "memgraph-local": 0,
+          "arango-local": 8,
+          "falkordb-local": 8
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a62098",
+        "values": {
+          "neo4j-local": 18,
+          "memgraph-local": 0,
+          "arango-local": 18,
+          "falkordb-local": 18
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a62295",
+        "values": {
+          "neo4j-local": 14,
+          "memgraph-local": 0,
+          "arango-local": 14,
+          "falkordb-local": 14
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a63570",
+        "values": {
+          "neo4j-local": 49,
+          "memgraph-local": 0,
+          "arango-local": 49,
+          "falkordb-local": 49
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a64304",
+        "values": {
+          "neo4j-local": 28,
+          "memgraph-local": 0,
+          "arango-local": 28,
+          "falkordb-local": 28
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a65277",
+        "values": {
+          "neo4j-local": 19,
+          "memgraph-local": 0,
+          "arango-local": 19,
+          "falkordb-local": 19
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a65947",
+        "values": {
+          "neo4j-local": 11,
+          "memgraph-local": 0,
+          "arango-local": 11,
+          "falkordb-local": 11
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a66525",
+        "values": {
+          "neo4j-local": 41,
+          "memgraph-local": 0,
+          "arango-local": 41,
+          "falkordb-local": 41
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a67126",
+        "values": {
+          "neo4j-local": 7,
+          "memgraph-local": 0,
+          "arango-local": 7,
+          "falkordb-local": 7
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a67456",
+        "values": {
+          "neo4j-local": 43,
+          "memgraph-local": 0,
+          "arango-local": 43,
+          "falkordb-local": 43
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a67670",
+        "values": {
+          "neo4j-local": 24,
+          "memgraph-local": 0,
+          "arango-local": 24,
+          "falkordb-local": 24
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a68025",
+        "values": {
+          "neo4j-local": 25,
+          "memgraph-local": 0,
+          "arango-local": 25,
+          "falkordb-local": 25
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a9810",
+        "values": {
+          "neo4j-local": 7,
+          "memgraph-local": 0,
+          "arango-local": 7,
+          "falkordb-local": 7
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a9992",
+        "values": {
+          "neo4j-local": 15,
+          "memgraph-local": 0,
+          "arango-local": 15,
+          "falkordb-local": 15
+        }
+      },
+      {
+        "workload": "traversal_1hop",
+        "key": "a9999",
+        "values": {
+          "neo4j-local": 46,
+          "memgraph-local": 0,
+          "arango-local": 46,
+          "falkordb-local": 46
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a10347",
+        "values": {
+          "neo4j-local": 408,
+          "memgraph-local": 0,
+          "arango-local": 408,
+          "falkordb-local": 408
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a11085",
+        "values": {
+          "neo4j-local": 93,
+          "memgraph-local": 0,
+          "arango-local": 93,
+          "falkordb-local": 93
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a11109",
+        "values": {
+          "neo4j-local": 61,
+          "memgraph-local": 0,
+          "arango-local": 61,
+          "falkordb-local": 61
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a11273",
+        "values": {
+          "neo4j-local": 282,
+          "memgraph-local": 0,
+          "arango-local": 282,
+          "falkordb-local": 282
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a12185",
+        "values": {
+          "neo4j-local": 468,
+          "memgraph-local": 0,
+          "arango-local": 468,
+          "falkordb-local": 468
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a12704",
+        "values": {
+          "neo4j-local": 71,
+          "memgraph-local": 0,
+          "arango-local": 71,
+          "falkordb-local": 71
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a12860",
+        "values": {
+          "neo4j-local": 649,
+          "memgraph-local": 0,
+          "arango-local": 649,
+          "falkordb-local": 649
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a13254",
+        "values": {
+          "neo4j-local": 148,
+          "memgraph-local": 0,
+          "arango-local": 148,
+          "falkordb-local": 148
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a14910",
+        "values": {
+          "neo4j-local": 119,
+          "memgraph-local": 0,
+          "arango-local": 119,
+          "falkordb-local": 119
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a15309",
+        "values": {
+          "neo4j-local": 1008,
+          "memgraph-local": 0,
+          "arango-local": 1008,
+          "falkordb-local": 1008
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a15613",
+        "values": {
+          "neo4j-local": 69,
+          "memgraph-local": 0,
+          "arango-local": 69,
+          "falkordb-local": 69
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a16221",
+        "values": {
+          "neo4j-local": 257,
+          "memgraph-local": 0,
+          "arango-local": 257,
+          "falkordb-local": 257
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a16267",
+        "values": {
+          "neo4j-local": 675,
+          "memgraph-local": 0,
+          "arango-local": 675,
+          "falkordb-local": 675
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a16336",
+        "values": {
+          "neo4j-local": 254,
+          "memgraph-local": 0,
+          "arango-local": 254,
+          "falkordb-local": 254
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a18344",
+        "values": {
+          "neo4j-local": 354,
+          "memgraph-local": 0,
+          "arango-local": 354,
+          "falkordb-local": 354
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a18507",
+        "values": {
+          "neo4j-local": 224,
+          "memgraph-local": 0,
+          "arango-local": 224,
+          "falkordb-local": 224
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a19417",
+        "values": {
+          "neo4j-local": 332,
+          "memgraph-local": 0,
+          "arango-local": 332,
+          "falkordb-local": 332
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a19461",
+        "values": {
+          "neo4j-local": 241,
+          "memgraph-local": 0,
+          "arango-local": 241,
+          "falkordb-local": 241
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a21369",
+        "values": {
+          "neo4j-local": 188,
+          "memgraph-local": 0,
+          "arango-local": 188,
+          "falkordb-local": 188
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a22150",
+        "values": {
+          "neo4j-local": 1466,
+          "memgraph-local": 0,
+          "arango-local": 1466,
+          "falkordb-local": 1466
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a22280",
+        "values": {
+          "neo4j-local": 467,
+          "memgraph-local": 0,
+          "arango-local": 467,
+          "falkordb-local": 467
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a23265",
+        "values": {
+          "neo4j-local": 826,
+          "memgraph-local": 0,
+          "arango-local": 826,
+          "falkordb-local": 826
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a24670",
+        "values": {
+          "neo4j-local": 147,
+          "memgraph-local": 0,
+          "arango-local": 147,
+          "falkordb-local": 147
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a25211",
+        "values": {
+          "neo4j-local": 307,
+          "memgraph-local": 0,
+          "arango-local": 307,
+          "falkordb-local": 307
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a25373",
+        "values": {
+          "neo4j-local": 113,
+          "memgraph-local": 0,
+          "arango-local": 113,
+          "falkordb-local": 113
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a26065",
+        "values": {
+          "neo4j-local": 201,
+          "memgraph-local": 0,
+          "arango-local": 201,
+          "falkordb-local": 201
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a26797",
+        "values": {
+          "neo4j-local": 467,
+          "memgraph-local": 0,
+          "arango-local": 467,
+          "falkordb-local": 467
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a26915",
+        "values": {
+          "neo4j-local": 1147,
+          "memgraph-local": 0,
+          "arango-local": 1147,
+          "falkordb-local": 1147
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27233",
+        "values": {
+          "neo4j-local": 591,
+          "memgraph-local": 0,
+          "arango-local": 591,
+          "falkordb-local": 591
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27245",
+        "values": {
+          "neo4j-local": 30,
+          "memgraph-local": 0,
+          "arango-local": 30,
+          "falkordb-local": 30
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27248",
+        "values": {
+          "neo4j-local": 275,
+          "memgraph-local": 0,
+          "arango-local": 275,
+          "falkordb-local": 275
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27348",
+        "values": {
+          "neo4j-local": 1353,
+          "memgraph-local": 0,
+          "arango-local": 1353,
+          "falkordb-local": 1353
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27349",
+        "values": {
+          "neo4j-local": 159,
+          "memgraph-local": 0,
+          "arango-local": 159,
+          "falkordb-local": 159
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27587",
+        "values": {
+          "neo4j-local": 83,
+          "memgraph-local": 0,
+          "arango-local": 83,
+          "falkordb-local": 83
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27633",
+        "values": {
+          "neo4j-local": 462,
+          "memgraph-local": 0,
+          "arango-local": 462,
+          "falkordb-local": 462
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a27905",
+        "values": {
+          "neo4j-local": 60,
+          "memgraph-local": 0,
+          "arango-local": 60,
+          "falkordb-local": 60
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a28797",
+        "values": {
+          "neo4j-local": 48,
+          "memgraph-local": 0,
+          "arango-local": 48,
+          "falkordb-local": 48
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a28887",
+        "values": {
+          "neo4j-local": 1151,
+          "memgraph-local": 0,
+          "arango-local": 1151,
+          "falkordb-local": 1151
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a29997",
+        "values": {
+          "neo4j-local": 220,
+          "memgraph-local": 0,
+          "arango-local": 220,
+          "falkordb-local": 220
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a30790",
+        "values": {
+          "neo4j-local": 721,
+          "memgraph-local": 0,
+          "arango-local": 721,
+          "falkordb-local": 721
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a30952",
+        "values": {
+          "neo4j-local": 554,
+          "memgraph-local": 0,
+          "arango-local": 554,
+          "falkordb-local": 554
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a31561",
+        "values": {
+          "neo4j-local": 1196,
+          "memgraph-local": 0,
+          "arango-local": 1196,
+          "falkordb-local": 1196
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a31564",
+        "values": {
+          "neo4j-local": 59,
+          "memgraph-local": 0,
+          "arango-local": 59,
+          "falkordb-local": 59
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a32009",
+        "values": {
+          "neo4j-local": 71,
+          "memgraph-local": 0,
+          "arango-local": 71,
+          "falkordb-local": 71
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a34097",
+        "values": {
+          "neo4j-local": 1001,
+          "memgraph-local": 0,
+          "arango-local": 1001,
+          "falkordb-local": 1001
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a34417",
+        "values": {
+          "neo4j-local": 975,
+          "memgraph-local": 0,
+          "arango-local": 975,
+          "falkordb-local": 975
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a34880",
+        "values": {
+          "neo4j-local": 288,
+          "memgraph-local": 0,
+          "arango-local": 288,
+          "falkordb-local": 288
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a34881",
+        "values": {
+          "neo4j-local": 915,
+          "memgraph-local": 0,
+          "arango-local": 915,
+          "falkordb-local": 915
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a36314",
+        "values": {
+          "neo4j-local": 22,
+          "memgraph-local": 0,
+          "arango-local": 22,
+          "falkordb-local": 22
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a38219",
+        "values": {
+          "neo4j-local": 885,
+          "memgraph-local": 0,
+          "arango-local": 885,
+          "falkordb-local": 885
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a38322",
+        "values": {
+          "neo4j-local": 301,
+          "memgraph-local": 0,
+          "arango-local": 301,
+          "falkordb-local": 301
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a38556",
+        "values": {
+          "neo4j-local": 285,
+          "memgraph-local": 0,
+          "arango-local": 285,
+          "falkordb-local": 285
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a38806",
+        "values": {
+          "neo4j-local": 176,
+          "memgraph-local": 0,
+          "arango-local": 176,
+          "falkordb-local": 176
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a39542",
+        "values": {
+          "neo4j-local": 193,
+          "memgraph-local": 0,
+          "arango-local": 193,
+          "falkordb-local": 193
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a40405",
+        "values": {
+          "neo4j-local": 74,
+          "memgraph-local": 0,
+          "arango-local": 74,
+          "falkordb-local": 74
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a40745",
+        "values": {
+          "neo4j-local": 1633,
+          "memgraph-local": 0,
+          "arango-local": 1633,
+          "falkordb-local": 1633
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a41946",
+        "values": {
+          "neo4j-local": 141,
+          "memgraph-local": 0,
+          "arango-local": 141,
+          "falkordb-local": 141
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a41961",
+        "values": {
+          "neo4j-local": 51,
+          "memgraph-local": 0,
+          "arango-local": 51,
+          "falkordb-local": 51
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a42444",
+        "values": {
+          "neo4j-local": 123,
+          "memgraph-local": 0,
+          "arango-local": 123,
+          "falkordb-local": 123
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a42791",
+        "values": {
+          "neo4j-local": 258,
+          "memgraph-local": 0,
+          "arango-local": 258,
+          "falkordb-local": 258
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a43002",
+        "values": {
+          "neo4j-local": 107,
+          "memgraph-local": 0,
+          "arango-local": 107,
+          "falkordb-local": 107
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a44495",
+        "values": {
+          "neo4j-local": 447,
+          "memgraph-local": 0,
+          "arango-local": 447,
+          "falkordb-local": 447
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a48014",
+        "values": {
+          "neo4j-local": 540,
+          "memgraph-local": 0,
+          "arango-local": 540,
+          "falkordb-local": 540
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a48362",
+        "values": {
+          "neo4j-local": 125,
+          "memgraph-local": 0,
+          "arango-local": 125,
+          "falkordb-local": 125
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a48448",
+        "values": {
+          "neo4j-local": 167,
+          "memgraph-local": 0,
+          "arango-local": 167,
+          "falkordb-local": 167
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a48879",
+        "values": {
+          "neo4j-local": 37,
+          "memgraph-local": 0,
+          "arango-local": 37,
+          "falkordb-local": 37
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a49970",
+        "values": {
+          "neo4j-local": 283,
+          "memgraph-local": 0,
+          "arango-local": 283,
+          "falkordb-local": 283
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a50470",
+        "values": {
+          "neo4j-local": 470,
+          "memgraph-local": 0,
+          "arango-local": 470,
+          "falkordb-local": 470
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a50820",
+        "values": {
+          "neo4j-local": 683,
+          "memgraph-local": 0,
+          "arango-local": 683,
+          "falkordb-local": 683
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a52084",
+        "values": {
+          "neo4j-local": 39,
+          "memgraph-local": 0,
+          "arango-local": 39,
+          "falkordb-local": 39
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a52480",
+        "values": {
+          "neo4j-local": 853,
+          "memgraph-local": 0,
+          "arango-local": 853,
+          "falkordb-local": 853
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a52982",
+        "values": {
+          "neo4j-local": 265,
+          "memgraph-local": 0,
+          "arango-local": 265,
+          "falkordb-local": 265
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a53942",
+        "values": {
+          "neo4j-local": 51,
+          "memgraph-local": 0,
+          "arango-local": 51,
+          "falkordb-local": 51
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a54179",
+        "values": {
+          "neo4j-local": 90,
+          "memgraph-local": 0,
+          "arango-local": 90,
+          "falkordb-local": 90
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a54904",
+        "values": {
+          "neo4j-local": 359,
+          "memgraph-local": 0,
+          "arango-local": 359,
+          "falkordb-local": 359
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a55345",
+        "values": {
+          "neo4j-local": 281,
+          "memgraph-local": 0,
+          "arango-local": 281,
+          "falkordb-local": 281
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a55506",
+        "values": {
+          "neo4j-local": 218,
+          "memgraph-local": 0,
+          "arango-local": 218,
+          "falkordb-local": 218
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a57982",
+        "values": {
+          "neo4j-local": 107,
+          "memgraph-local": 0,
+          "arango-local": 107,
+          "falkordb-local": 107
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a58155",
+        "values": {
+          "neo4j-local": 479,
+          "memgraph-local": 0,
+          "arango-local": 479,
+          "falkordb-local": 479
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a58390",
+        "values": {
+          "neo4j-local": 40,
+          "memgraph-local": 0,
+          "arango-local": 40,
+          "falkordb-local": 40
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a58649",
+        "values": {
+          "neo4j-local": 76,
+          "memgraph-local": 0,
+          "arango-local": 76,
+          "falkordb-local": 76
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a59624",
+        "values": {
+          "neo4j-local": 125,
+          "memgraph-local": 0,
+          "arango-local": 125,
+          "falkordb-local": 125
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a59716",
+        "values": {
+          "neo4j-local": 553,
+          "memgraph-local": 0,
+          "arango-local": 553,
+          "falkordb-local": 553
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a60116",
+        "values": {
+          "neo4j-local": 291,
+          "memgraph-local": 0,
+          "arango-local": 291,
+          "falkordb-local": 291
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a61345",
+        "values": {
+          "neo4j-local": 319,
+          "memgraph-local": 0,
+          "arango-local": 319,
+          "falkordb-local": 319
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a62017",
+        "values": {
+          "neo4j-local": 14,
+          "memgraph-local": 0,
+          "arango-local": 14,
+          "falkordb-local": 14
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a62098",
+        "values": {
+          "neo4j-local": 395,
+          "memgraph-local": 0,
+          "arango-local": 395,
+          "falkordb-local": 395
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a62295",
+        "values": {
+          "neo4j-local": 154,
+          "memgraph-local": 0,
+          "arango-local": 154,
+          "falkordb-local": 154
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a63570",
+        "values": {
+          "neo4j-local": 1723,
+          "memgraph-local": 0,
+          "arango-local": 1723,
+          "falkordb-local": 1723
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a64304",
+        "values": {
+          "neo4j-local": 1105,
+          "memgraph-local": 0,
+          "arango-local": 1105,
+          "falkordb-local": 1105
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a65277",
+        "values": {
+          "neo4j-local": 464,
+          "memgraph-local": 0,
+          "arango-local": 464,
+          "falkordb-local": 464
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a65947",
+        "values": {
+          "neo4j-local": 370,
+          "memgraph-local": 0,
+          "arango-local": 370,
+          "falkordb-local": 370
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a66525",
+        "values": {
+          "neo4j-local": 812,
+          "memgraph-local": 0,
+          "arango-local": 812,
+          "falkordb-local": 812
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a67126",
+        "values": {
+          "neo4j-local": 164,
+          "memgraph-local": 0,
+          "arango-local": 164,
+          "falkordb-local": 164
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a67456",
+        "values": {
+          "neo4j-local": 687,
+          "memgraph-local": 0,
+          "arango-local": 687,
+          "falkordb-local": 687
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a67670",
+        "values": {
+          "neo4j-local": 1118,
+          "memgraph-local": 0,
+          "arango-local": 1118,
+          "falkordb-local": 1118
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a68025",
+        "values": {
+          "neo4j-local": 1220,
+          "memgraph-local": 0,
+          "arango-local": 1220,
+          "falkordb-local": 1220
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a9810",
+        "values": {
+          "neo4j-local": 103,
+          "memgraph-local": 0,
+          "arango-local": 103,
+          "falkordb-local": 103
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a9992",
+        "values": {
+          "neo4j-local": 184,
+          "memgraph-local": 0,
+          "arango-local": 184,
+          "falkordb-local": 184
+        }
+      },
+      {
+        "workload": "traversal_2hop",
+        "key": "a9999",
+        "values": {
+          "neo4j-local": 553,
+          "memgraph-local": 0,
+          "arango-local": 553,
+          "falkordb-local": 553
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a10347",
+        "values": {
+          "neo4j-local": 6330,
+          "memgraph-local": 0,
+          "arango-local": 6330,
+          "falkordb-local": 6330
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a11085",
+        "values": {
+          "neo4j-local": 2073,
+          "memgraph-local": 0,
+          "arango-local": 2073,
+          "falkordb-local": 2073
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a11109",
+        "values": {
+          "neo4j-local": 688,
+          "memgraph-local": 0,
+          "arango-local": 688,
+          "falkordb-local": 688
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a11273",
+        "values": {
+          "neo4j-local": 4858,
+          "memgraph-local": 0,
+          "arango-local": 4858,
+          "falkordb-local": 4858
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a12185",
+        "values": {
+          "neo4j-local": 6080,
+          "memgraph-local": 0,
+          "arango-local": 6080,
+          "falkordb-local": 6080
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a12704",
+        "values": {
+          "neo4j-local": 805,
+          "memgraph-local": 0,
+          "arango-local": 805,
+          "falkordb-local": 805
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a12860",
+        "values": {
+          "neo4j-local": 7132,
+          "memgraph-local": 0,
+          "arango-local": 7132,
+          "falkordb-local": 7132
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a13254",
+        "values": {
+          "neo4j-local": 2833,
+          "memgraph-local": 0,
+          "arango-local": 2833,
+          "falkordb-local": 2833
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a14910",
+        "values": {
+          "neo4j-local": 1787,
+          "memgraph-local": 0,
+          "arango-local": 1787,
+          "falkordb-local": 1787
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a15309",
+        "values": {
+          "neo4j-local": 8442,
+          "memgraph-local": 0,
+          "arango-local": 8442,
+          "falkordb-local": 8442
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a15613",
+        "values": {
+          "neo4j-local": 1180,
+          "memgraph-local": 0,
+          "arango-local": 1180,
+          "falkordb-local": 1180
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a16221",
+        "values": {
+          "neo4j-local": 3763,
+          "memgraph-local": 0,
+          "arango-local": 3763,
+          "falkordb-local": 3763
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a16267",
+        "values": {
+          "neo4j-local": 7312,
+          "memgraph-local": 0,
+          "arango-local": 7312,
+          "falkordb-local": 7312
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a16336",
+        "values": {
+          "neo4j-local": 3645,
+          "memgraph-local": 0,
+          "arango-local": 3645,
+          "falkordb-local": 3645
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a18344",
+        "values": {
+          "neo4j-local": 5506,
+          "memgraph-local": 0,
+          "arango-local": 5506,
+          "falkordb-local": 5506
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a18507",
+        "values": {
+          "neo4j-local": 4140,
+          "memgraph-local": 0,
+          "arango-local": 4140,
+          "falkordb-local": 4140
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a19417",
+        "values": {
+          "neo4j-local": 5291,
+          "memgraph-local": 0,
+          "arango-local": 5291,
+          "falkordb-local": 5291
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a19461",
+        "values": {
+          "neo4j-local": 4465,
+          "memgraph-local": 0,
+          "arango-local": 4465,
+          "falkordb-local": 4465
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a21369",
+        "values": {
+          "neo4j-local": 2272,
+          "memgraph-local": 0,
+          "arango-local": 2272,
+          "falkordb-local": 2272
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a22150",
+        "values": {
+          "neo4j-local": 9887,
+          "memgraph-local": 0,
+          "arango-local": 9887,
+          "falkordb-local": 9887
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a22280",
+        "values": {
+          "neo4j-local": 5641,
+          "memgraph-local": 0,
+          "arango-local": 5641,
+          "falkordb-local": 5641
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a23265",
+        "values": {
+          "neo4j-local": 8138,
+          "memgraph-local": 0,
+          "arango-local": 8138,
+          "falkordb-local": 8138
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a24670",
+        "values": {
+          "neo4j-local": 3460,
+          "memgraph-local": 0,
+          "arango-local": 3460,
+          "falkordb-local": 3460
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a25211",
+        "values": {
+          "neo4j-local": 4403,
+          "memgraph-local": 0,
+          "arango-local": 4403,
+          "falkordb-local": 4403
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a25373",
+        "values": {
+          "neo4j-local": 1769,
+          "memgraph-local": 0,
+          "arango-local": 1769,
+          "falkordb-local": 1769
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a26065",
+        "values": {
+          "neo4j-local": 3205,
+          "memgraph-local": 0,
+          "arango-local": 3205,
+          "falkordb-local": 3205
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a26797",
+        "values": {
+          "neo4j-local": 5961,
+          "memgraph-local": 0,
+          "arango-local": 5961,
+          "falkordb-local": 5961
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a26915",
+        "values": {
+          "neo4j-local": 9009,
+          "memgraph-local": 0,
+          "arango-local": 9009,
+          "falkordb-local": 9009
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27233",
+        "values": {
+          "neo4j-local": 6777,
+          "memgraph-local": 0,
+          "arango-local": 6777,
+          "falkordb-local": 6777
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27245",
+        "values": {
+          "neo4j-local": 338,
+          "memgraph-local": 0,
+          "arango-local": 338,
+          "falkordb-local": 338
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27248",
+        "values": {
+          "neo4j-local": 4131,
+          "memgraph-local": 0,
+          "arango-local": 4131,
+          "falkordb-local": 4131
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27348",
+        "values": {
+          "neo4j-local": 10076,
+          "memgraph-local": 0,
+          "arango-local": 10076,
+          "falkordb-local": 10076
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27349",
+        "values": {
+          "neo4j-local": 2975,
+          "memgraph-local": 0,
+          "arango-local": 2975,
+          "falkordb-local": 2975
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27587",
+        "values": {
+          "neo4j-local": 1497,
+          "memgraph-local": 0,
+          "arango-local": 1497,
+          "falkordb-local": 1497
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27633",
+        "values": {
+          "neo4j-local": 5706,
+          "memgraph-local": 0,
+          "arango-local": 5706,
+          "falkordb-local": 5706
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a27905",
+        "values": {
+          "neo4j-local": 1211,
+          "memgraph-local": 0,
+          "arango-local": 1211,
+          "falkordb-local": 1211
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a28797",
+        "values": {
+          "neo4j-local": 260,
+          "memgraph-local": 0,
+          "arango-local": 260,
+          "falkordb-local": 260
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a28887",
+        "values": {
+          "neo4j-local": 9182,
+          "memgraph-local": 0,
+          "arango-local": 9182,
+          "falkordb-local": 9182
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a29997",
+        "values": {
+          "neo4j-local": 3285,
+          "memgraph-local": 0,
+          "arango-local": 3285,
+          "falkordb-local": 3285
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a30790",
+        "values": {
+          "neo4j-local": 7230,
+          "memgraph-local": 0,
+          "arango-local": 7230,
+          "falkordb-local": 7230
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a30952",
+        "values": {
+          "neo4j-local": 6943,
+          "memgraph-local": 0,
+          "arango-local": 6943,
+          "falkordb-local": 6943
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a31561",
+        "values": {
+          "neo4j-local": 9134,
+          "memgraph-local": 0,
+          "arango-local": 9134,
+          "falkordb-local": 9134
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a31564",
+        "values": {
+          "neo4j-local": 1713,
+          "memgraph-local": 0,
+          "arango-local": 1713,
+          "falkordb-local": 1713
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a32009",
+        "values": {
+          "neo4j-local": 1502,
+          "memgraph-local": 0,
+          "arango-local": 1502,
+          "falkordb-local": 1502
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a34097",
+        "values": {
+          "neo4j-local": 8471,
+          "memgraph-local": 0,
+          "arango-local": 8471,
+          "falkordb-local": 8471
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a34417",
+        "values": {
+          "neo4j-local": 8881,
+          "memgraph-local": 0,
+          "arango-local": 8881,
+          "falkordb-local": 8881
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a34880",
+        "values": {
+          "neo4j-local": 4509,
+          "memgraph-local": 0,
+          "arango-local": 4509,
+          "falkordb-local": 4509
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a34881",
+        "values": {
+          "neo4j-local": 8302,
+          "memgraph-local": 0,
+          "arango-local": 8302,
+          "falkordb-local": 8302
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a36314",
+        "values": {
+          "neo4j-local": 233,
+          "memgraph-local": 0,
+          "arango-local": 233,
+          "falkordb-local": 233
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a38219",
+        "values": {
+          "neo4j-local": 8443,
+          "memgraph-local": 0,
+          "arango-local": 8443,
+          "falkordb-local": 8443
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a38322",
+        "values": {
+          "neo4j-local": 3842,
+          "memgraph-local": 0,
+          "arango-local": 3842,
+          "falkordb-local": 3842
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a38556",
+        "values": {
+          "neo4j-local": 3443,
+          "memgraph-local": 0,
+          "arango-local": 3443,
+          "falkordb-local": 3443
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a38806",
+        "values": {
+          "neo4j-local": 3237,
+          "memgraph-local": 0,
+          "arango-local": 3237,
+          "falkordb-local": 3237
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a39542",
+        "values": {
+          "neo4j-local": 2920,
+          "memgraph-local": 0,
+          "arango-local": 2920,
+          "falkordb-local": 2920
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a40405",
+        "values": {
+          "neo4j-local": 678,
+          "memgraph-local": 0,
+          "arango-local": 678,
+          "falkordb-local": 678
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a40745",
+        "values": {
+          "neo4j-local": 10316,
+          "memgraph-local": 0,
+          "arango-local": 10316,
+          "falkordb-local": 10316
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a41946",
+        "values": {
+          "neo4j-local": 1626,
+          "memgraph-local": 0,
+          "arango-local": 1626,
+          "falkordb-local": 1626
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a41961",
+        "values": {
+          "neo4j-local": 720,
+          "memgraph-local": 0,
+          "arango-local": 720,
+          "falkordb-local": 720
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a42444",
+        "values": {
+          "neo4j-local": 1957,
+          "memgraph-local": 0,
+          "arango-local": 1957,
+          "falkordb-local": 1957
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a42791",
+        "values": {
+          "neo4j-local": 4721,
+          "memgraph-local": 0,
+          "arango-local": 4721,
+          "falkordb-local": 4721
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a43002",
+        "values": {
+          "neo4j-local": 1935,
+          "memgraph-local": 0,
+          "arango-local": 1935,
+          "falkordb-local": 1935
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a44495",
+        "values": {
+          "neo4j-local": 5723,
+          "memgraph-local": 0,
+          "arango-local": 5723,
+          "falkordb-local": 5723
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a48014",
+        "values": {
+          "neo4j-local": 6832,
+          "memgraph-local": 0,
+          "arango-local": 6832,
+          "falkordb-local": 6832
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a48362",
+        "values": {
+          "neo4j-local": 1898,
+          "memgraph-local": 0,
+          "arango-local": 1898,
+          "falkordb-local": 1898
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a48448",
+        "values": {
+          "neo4j-local": 3073,
+          "memgraph-local": 0,
+          "arango-local": 3073,
+          "falkordb-local": 3073
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a48879",
+        "values": {
+          "neo4j-local": 299,
+          "memgraph-local": 0,
+          "arango-local": 299,
+          "falkordb-local": 299
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a49970",
+        "values": {
+          "neo4j-local": 4845,
+          "memgraph-local": 0,
+          "arango-local": 4845,
+          "falkordb-local": 4845
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a50470",
+        "values": {
+          "neo4j-local": 5267,
+          "memgraph-local": 0,
+          "arango-local": 5267,
+          "falkordb-local": 5267
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a50820",
+        "values": {
+          "neo4j-local": 7154,
+          "memgraph-local": 0,
+          "arango-local": 7154,
+          "falkordb-local": 7154
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a52084",
+        "values": {
+          "neo4j-local": 640,
+          "memgraph-local": 0,
+          "arango-local": 640,
+          "falkordb-local": 640
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a52480",
+        "values": {
+          "neo4j-local": 7885,
+          "memgraph-local": 0,
+          "arango-local": 7885,
+          "falkordb-local": 7885
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a52982",
+        "values": {
+          "neo4j-local": 4360,
+          "memgraph-local": 0,
+          "arango-local": 4360,
+          "falkordb-local": 4360
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a53942",
+        "values": {
+          "neo4j-local": 681,
+          "memgraph-local": 0,
+          "arango-local": 681,
+          "falkordb-local": 681
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a54179",
+        "values": {
+          "neo4j-local": 1579,
+          "memgraph-local": 0,
+          "arango-local": 1579,
+          "falkordb-local": 1579
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a54904",
+        "values": {
+          "neo4j-local": 4896,
+          "memgraph-local": 0,
+          "arango-local": 4896,
+          "falkordb-local": 4896
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a55345",
+        "values": {
+          "neo4j-local": 4672,
+          "memgraph-local": 0,
+          "arango-local": 4672,
+          "falkordb-local": 4672
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a55506",
+        "values": {
+          "neo4j-local": 4350,
+          "memgraph-local": 0,
+          "arango-local": 4350,
+          "falkordb-local": 4350
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a57982",
+        "values": {
+          "neo4j-local": 2710,
+          "memgraph-local": 0,
+          "arango-local": 2710,
+          "falkordb-local": 2710
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a58155",
+        "values": {
+          "neo4j-local": 6285,
+          "memgraph-local": 0,
+          "arango-local": 6285,
+          "falkordb-local": 6285
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a58390",
+        "values": {
+          "neo4j-local": 484,
+          "memgraph-local": 0,
+          "arango-local": 484,
+          "falkordb-local": 484
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a58649",
+        "values": {
+          "neo4j-local": 972,
+          "memgraph-local": 0,
+          "arango-local": 972,
+          "falkordb-local": 972
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a59624",
+        "values": {
+          "neo4j-local": 2352,
+          "memgraph-local": 0,
+          "arango-local": 2352,
+          "falkordb-local": 2352
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a59716",
+        "values": {
+          "neo4j-local": 6842,
+          "memgraph-local": 0,
+          "arango-local": 6842,
+          "falkordb-local": 6842
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a60116",
+        "values": {
+          "neo4j-local": 4118,
+          "memgraph-local": 0,
+          "arango-local": 4118,
+          "falkordb-local": 4118
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a61345",
+        "values": {
+          "neo4j-local": 4936,
+          "memgraph-local": 0,
+          "arango-local": 4936,
+          "falkordb-local": 4936
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a62017",
+        "values": {
+          "neo4j-local": 214,
+          "memgraph-local": 0,
+          "arango-local": 214,
+          "falkordb-local": 214
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a62098",
+        "values": {
+          "neo4j-local": 5305,
+          "memgraph-local": 0,
+          "arango-local": 5305,
+          "falkordb-local": 5305
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a62295",
+        "values": {
+          "neo4j-local": 3018,
+          "memgraph-local": 0,
+          "arango-local": 3018,
+          "falkordb-local": 3018
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a63570",
+        "values": {
+          "neo4j-local": 10568,
+          "memgraph-local": 0,
+          "arango-local": 10568,
+          "falkordb-local": 10568
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a64304",
+        "values": {
+          "neo4j-local": 8700,
+          "memgraph-local": 0,
+          "arango-local": 8700,
+          "falkordb-local": 8700
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a65277",
+        "values": {
+          "neo4j-local": 5937,
+          "memgraph-local": 0,
+          "arango-local": 5937,
+          "falkordb-local": 5937
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a65947",
+        "values": {
+          "neo4j-local": 5158,
+          "memgraph-local": 0,
+          "arango-local": 5158,
+          "falkordb-local": 5158
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a66525",
+        "values": {
+          "neo4j-local": 8306,
+          "memgraph-local": 0,
+          "arango-local": 8306,
+          "falkordb-local": 8306
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a67126",
+        "values": {
+          "neo4j-local": 2977,
+          "memgraph-local": 0,
+          "arango-local": 2977,
+          "falkordb-local": 2977
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a67456",
+        "values": {
+          "neo4j-local": 7085,
+          "memgraph-local": 0,
+          "arango-local": 7085,
+          "falkordb-local": 7085
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a67670",
+        "values": {
+          "neo4j-local": 9093,
+          "memgraph-local": 0,
+          "arango-local": 9093,
+          "falkordb-local": 9093
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a68025",
+        "values": {
+          "neo4j-local": 9137,
+          "memgraph-local": 0,
+          "arango-local": 9137,
+          "falkordb-local": 9137
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a9810",
+        "values": {
+          "neo4j-local": 2520,
+          "memgraph-local": 0,
+          "arango-local": 2520,
+          "falkordb-local": 2520
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a9992",
+        "values": {
+          "neo4j-local": 3322,
+          "memgraph-local": 0,
+          "arango-local": 3322,
+          "falkordb-local": 3322
+        }
+      },
+      {
+        "workload": "traversal_3hop",
+        "key": "a9999",
+        "values": {
+          "neo4j-local": 5984,
+          "memgraph-local": 0,
+          "arango-local": 5984,
+          "falkordb-local": 5984
+        }
+      }
+    ],
+    "expectation_failures": [
+      {
+        "platform": "memgraph-local",
+        "workload": "aggregation_groupby_cohort",
+        "expected": 18771,
+        "got": 15000
+      },
+      {
+        "platform": "memgraph-local",
+        "workload": "aggregation_rel_count",
+        "expected": 198050,
+        "got": 0
+      }
+    ],
+    "monotonic_failures": [],
+    "clean": false
+  },
+  "finished_at": "2026-08-23T19:50:51+00:00"
+}
