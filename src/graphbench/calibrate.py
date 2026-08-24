@@ -1,0 +1,180 @@
+"""Batch size sweep and repeat-run variance.
+
+Two questions this answers, both of which came out of a real failure rather than
+curiosity.
+
+Memgraph loaded all 198,050 relationships on one run and stopped at 98,050 on
+another, from a virgin store both times, with the same 200 MiB limit. So either
+the batch size is the difference or the engine is genuinely on the boundary and
+completion is not deterministic. Guessing which would have been the easy option;
+this measures it.
+
+And `config/workloads.yaml` ships batch_size 5000 with a comment admitting it was
+a guess. This is what turns it into a measurement.
+
+Every attempt starts from a destroyed and rebuilt store, so attempts cannot
+contaminate each other, which was the bug that made this necessary in the first
+place.
+"""
+
+import json
+from dataclasses import replace
+from datetime import UTC, datetime
+from typing import Any
+
+from graphbench import adapters, dockerctl, paths
+from graphbench.config import Platform, Workloads
+from graphbench.datasets import PreparedGraph
+
+
+def _say(message: str) -> None:
+    print(message, flush=True)
+
+
+def one_attempt(
+    platform: Platform, graph: PreparedGraph, workloads: Workloads, batch_size: int
+) -> dict[str, Any]:
+    attempt: dict[str, Any] = {"batch_size": batch_size}
+
+    if platform.container and platform.service:
+        try:
+            reset = dockerctl.recreate(platform.service, platform.container)
+            attempt["reset_seconds"] = reset["seconds_to_healthy"]
+        except dockerctl.DockerUnavailable as exc:
+            attempt["error"] = f"reset failed: {exc}"
+            return attempt
+
+    adapter = adapters.build(platform, graph, replace(workloads, batch_size=batch_size))
+    try:
+        adapter.connect()
+        stats = adapter.load()
+        phases = {p.name: p for p in stats.phases}
+        nodes = phases["nodes"].rows
+        edges = phases["edges"].rows
+        attempt.update(
+            {
+                "nodes_loaded": nodes,
+                "edges_loaded": edges,
+                "complete": nodes == graph.node_count and edges == graph.edge_count,
+                "total_seconds": round(stats.total_seconds, 2),
+                "nodes_per_second": stats.nodes_per_second,
+                "rels_per_second": stats.rels_per_second,
+                "failed_batches": len(stats.errors),
+                "first_error": stats.errors[0][:200] if stats.errors else None,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        attempt["error"] = f"{type(exc).__name__}: {exc}"
+    finally:
+        try:
+            adapter.close()
+        except Exception:  # noqa: BLE001, S110
+            pass
+    return attempt
+
+
+def sweep(
+    platforms: list[Platform],
+    graph: PreparedGraph,
+    workloads: Workloads,
+    batch_sizes: list[int],
+    repeats: int = 1,
+) -> dict[str, Any]:
+    report: dict[str, Any] = {
+        "started_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "dataset": graph.manifest["dataset"],
+        "nodes": graph.node_count,
+        "edges": graph.edge_count,
+        "batch_sizes": batch_sizes,
+        "repeats": repeats,
+        "platforms": {},
+    }
+
+    for platform in platforms:
+        _say(f"\n{platform.display}")
+        attempts = []
+        for size in batch_sizes:
+            for attempt_no in range(1, repeats + 1):
+                result = one_attempt(platform, graph, workloads, size)
+                result["attempt"] = attempt_no
+                attempts.append(result)
+                if "error" in result:
+                    _say(f"  batch {size:>6} attempt {attempt_no}: {result['error'][:90]}")
+                else:
+                    verdict = "complete" if result["complete"] else "PARTIAL"
+                    failed = result["failed_batches"]
+                    tail = f", {failed} batches failed" if failed else ""
+                    _say(
+                        f"  batch {size:>6} attempt {attempt_no}: {verdict} "
+                        f"{result['edges_loaded']:,}/{graph.edge_count:,} edges in "
+                        f"{result['total_seconds']}s{tail}"
+                    )
+        report["platforms"][platform.id] = {
+            "display": platform.display,
+            "engine": platform.engine,
+            "attempts": attempts,
+        }
+
+    report["finished_at"] = datetime.now(UTC).isoformat(timespec="seconds")
+    out = paths.RESULTS_DIR / "calibration"
+    out.mkdir(parents=True, exist_ok=True)
+    stamp = report["started_at"].replace(":", "").replace("-", "")
+    (out / f"{stamp}.json").write_text(json.dumps(report, indent=2, default=str))
+    (paths.DOCS_DIR / "CALIBRATION.md").write_text(render(report))
+    _say(f"\nwrote docs/CALIBRATION.md and results/calibration/{stamp}.json")
+    return report
+
+
+def render(report: dict[str, Any]) -> str:
+    lines = [
+        "# Batch size calibration",
+        "",
+        "Generated by `graphbench calibrate`. Do not edit by hand.",
+        "",
+        f"Dataset **{report['dataset']}**, {report['nodes']:,} nodes / "
+        f"{report['edges']:,} relationships. "
+        f"Batch sizes {report['batch_sizes']}, {report['repeats']} attempt(s) each.",
+        "",
+        "Every attempt starts from a destroyed and rebuilt store, so attempts cannot "
+        "contaminate each other. That matters here: an earlier version of this suite "
+        "reused containers, and an engine that does not return freed memory to its "
+        "allocator then failed a load it had previously completed.",
+        "",
+    ]
+
+    for data in report["platforms"].values():
+        lines += [f"## {data['display']}", ""]
+        rows = [
+            "| Batch | Attempt | Result | Edges loaded | Total (s) | Nodes/s | Rels/s "
+            "| Failed batches |",
+            "| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |",
+        ]
+        for a in data["attempts"]:
+            if "error" in a:
+                rows.append(
+                    f"| {a['batch_size']:,} | {a['attempt']} | error | - | - | - | - | - |"
+                )
+                continue
+            rows.append(
+                f"| {a['batch_size']:,} | {a['attempt']} | "
+                f"{'complete' if a['complete'] else '**partial**'} | "
+                f"{a['edges_loaded']:,} | {a['total_seconds']} | "
+                f"{a['nodes_per_second']:,.0f} | {a['rels_per_second']:,.0f} | "
+                f"{a['failed_batches']} |"
+            )
+        lines += rows + [""]
+
+        errors = [a["first_error"] for a in data["attempts"] if a.get("first_error")]
+        if errors:
+            lines += ["First error seen:", "", "```text", errors[0], "```", ""]
+
+    lines += [
+        "## What this changes",
+        "",
+        "The batch size used for the reported benchmark runs is whatever this sweep "
+        "says every engine can complete, applied identically to all of them. If one "
+        "engine cannot finish the load at any batch size, that is recorded as its "
+        "result rather than worked around.",
+        "",
+    ]
+    return "\n".join(lines) + "\n"
