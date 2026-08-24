@@ -10,8 +10,10 @@ and three separate attempts at this benchmark produced fast, clean, completely
 wrong results before the correctness checks caught them.
 
 - [Results](docs/RESULTS.md) - full matrix, charts, per-iteration samples, verbatim errors
+- [Analysis](docs/ANALYSIS.md) - what the numbers show and why, plus what I would do differently
+- [Variance](docs/VARIANCE.md) - two identical runs diffed, and which metrics survive repetition
 - [Decisions](docs/DECISIONS.md) - every judgement call, and what this suite does not measure
-- [Calibration](docs/CALIBRATION.md) - measured batch size sweep and repeat-run variance
+- [Calibration](docs/CALIBRATION.md) - measured batch size sweep across five batch sizes
 - [Local stack](docs/LOCAL_STACK.md) - what each engine needed before it fit in 256 MB
 
 ## Why most graph benchmarks are not worth reading
@@ -133,7 +135,7 @@ in the results JSON.
 
 <!-- BEGIN GENERATED RESULTS -->
 
-Run `20260824T060418Z` on **ca-astroph** (18,771 nodes / 198,050 relationships). Regenerate with `make report`. Full detail, charts, per-iteration samples and verbatim errors: [docs/RESULTS.md](docs/RESULTS.md).
+Run `20260824T093849Z` on **ca-astroph** (18,771 nodes / 198,050 relationships). Regenerate with `make report`. Full detail, charts, per-iteration samples and verbatim errors: [docs/RESULTS.md](docs/RESULTS.md).
 
 **Cross-checked:** every platform returned identical values on 404 query results, so the latencies below are comparing equivalent queries.
 
@@ -154,43 +156,43 @@ Every engine in Docker at 0.5 vCPU / 256 MB, CognoDB's free c0 envelope, on one 
 
 | Platform | Nodes/s | Rels/s | Index build (s) | Total load (s) | Rows loaded | Load method |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| ArangoDB (capped) | 54,201 | 26,082 | 0.18 | 8.1 | 216,821/216,821 | python-arango, AQL batch INSERT (not import_bulk, see module docstring) |
-| FalkorDB (capped) | 47,457 | 4,098 | 1.09 | 49.8 | 216,821/216,821 | FalkorDB client over RESP, GRAPH.QUERY with UNWIND batches |
-| Memgraph (capped) | 32,060 | 69,651 | 0.20 | 3.6 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
-| Neo4j 5 Community (capped) | 2,026 | 2,686 | 18.73 | 101.7 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
+| ArangoDB (capped) | 11,673 | 16,242 | 0.18 | 14.0 | 216,821/216,821 | python-arango, AQL batch INSERT (not import_bulk, see module docstring) |
+| FalkorDB (capped) | 43,395 | 4,124 | 1.18 | 49.6 | 216,821/216,821 | FalkorDB client over RESP, GRAPH.QUERY with UNWIND batches |
+| Memgraph (capped) | 30,923 | 57,767 | 0.21 | 4.3 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
+| Neo4j 5 Community (capped) | 745 | 1,814 | 27.98 | 162.3 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
 
 **Read latency (ms)**
 
 | Platform | RETURN 1 | Point | 1-hop | 2-hop | 3-hop | Filtered | Group-by |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | **P50 (ms)** |  |  |  |  |  |  |  |
-| ArangoDB (capped) | 0.88 | 1.07 | 1.82 | 1.85 | 7.62 | 1.50 | 5.55 |
-| FalkorDB (capped) | 0.23 | 0.33 | 0.50 | 0.76 | 58.84 | 0.84 | 2.91 |
-| Memgraph (capped) | 0.32 | 0.34 | 0.39 | 0.64 | 11.30 | 0.54 | 3.64 |
-| Neo4j 5 Community (capped) | 2.93 | 4.40 | 5.94 | 6.48 | 15.20 | 2.38 | 51.59 |
+| ArangoDB (capped) | 0.93 | 0.95 | 1.32 | 1.93 | 5.87 | 0.94 | 3.84 |
+| FalkorDB (capped) | 0.25 | 0.35 | 0.41 | 1.20 | 58.05 | 0.84 | 2.80 |
+| Memgraph (capped) | 0.32 | 0.69 | 0.46 | 0.90 | 13.88 | 0.63 | 4.59 |
+| Neo4j 5 Community (capped) | 2.99 | 4.08 | 6.72 | 5.66 | 13.66 | 3.31 | 9.75 |
 | **P95 (ms)** |  |  |  |  |  |  |  |
-| ArangoDB (capped) | 1.72 | 2.05 | 4.57 | 3.98 | 65.94 | 2.22 | 35.43 |
-| FalkorDB (capped) | 0.31 | 0.77 | 1.78 | 3.78 | 410.88 | 1.63 | 3.19 |
-| Memgraph (capped) | 0.96 | 0.58 | 0.62 | 1.68 | 166.75 | 1.10 | 50.87 |
-| Neo4j 5 Community (capped) | 68.21 | 79.32 | 68.17 | 71.38 | 115.06 | 66.40 | 109.90 |
+| ArangoDB (capped) | 2.14 | 1.51 | 5.75 | 10.05 | 62.87 | 1.54 | 45.05 |
+| FalkorDB (capped) | 0.54 | 1.04 | 1.29 | 4.49 | 526.41 | 1.40 | 5.32 |
+| Memgraph (capped) | 0.69 | 2.38 | 1.76 | 3.86 | 173.55 | 1.14 | 44.52 |
+| Neo4j 5 Community (capped) | 73.20 | 70.42 | 187.57 | 64.49 | 271.18 | 72.11 | 88.29 |
 
 **Mixed workload**
 
 | Platform | 1 client (qps) | 10 clients (qps) | 40 clients (qps) | Read p95 @ max | Errors |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| ArangoDB (capped) | 524.0 | 527.1 | 430.6 | 196.67 | 50 |
-| FalkorDB (capped) | 1048.6 | 842.9 | 929.0 | 85.46 | 0 |
-| Memgraph (capped) | 692.0 | 429.9 | 534.3 | 113.00 | 0 |
-| Neo4j 5 Community (capped) | 55.6 | 58.6 | 80.9 | 795.14 | 1 |
+| ArangoDB (capped) | 613.3 | 432.5 | 135.5 | 905.51 | 45 |
+| FalkorDB (capped) | 996.6 | 801.7 | 692.8 | 101.28 | 0 |
+| Memgraph (capped) | 581.1 | 358.6 | 483.9 | 183.54 | 0 |
+| Neo4j 5 Community (capped) | 51.7 | 51.5 | 26.6 | 2402.09 | 2 |
 
 **Footprint**
 
 | Platform | Observed RSS | % of cap | Store on disk | Engine-reported | Source |
 | --- | ---: | ---: | ---: | --- | --- |
-| ArangoDB (capped) | 254MiB / 256MiB | 99.21% | 88.5 MB | not observable | docker stats |
-| FalkorDB (capped) | 128.4MiB / 256MiB | 50.17% | 0.0 MB | yes | INFO memory + GRAPH.MEMORY |
-| Memgraph (capped) | 148.1MiB / 256MiB | 57.86% | 0.2 MB | yes | SHOW STORAGE INFO |
-| Neo4j 5 Community (capped) | 255.9MiB / 256MiB | 99.97% | 542.5 MB | yes | dbms.queryJmx |
+| ArangoDB (capped) | 225.4MiB / 256MiB | 88.04% | 87.8 MB | yes | collection statistics() |
+| FalkorDB (capped) | 119.8MiB / 256MiB | 46.78% | - | yes | INFO memory + GRAPH.MEMORY |
+| Memgraph (capped) | 145.1MiB / 256MiB | 56.67% | 0.2 MB | yes | SHOW STORAGE INFO |
+| Neo4j 5 Community (capped) | 255.8MiB / 256MiB | 99.93% | 542.5 MB | yes | dbms.queryJmx |
 
 ### Embedded reference (not ranked)
 
@@ -206,28 +208,28 @@ In-process, so there is no network round trip at all. Included as a floor: the g
 
 | Platform | Nodes/s | Rels/s | Index build (s) | Total load (s) | Rows loaded | Load method |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Kuzu (embedded, reference only) | 40,075 | 8,176 | 0.05 | 24.7 | 216,821/216,821 | embedded kuzu, in-process Cypher UNWIND batches |
+| Kuzu (embedded, reference only) | 26,361 | 5,124 | 0.10 | 39.5 | 216,821/216,821 | embedded kuzu, in-process Cypher UNWIND batches |
 
 **Read latency (ms)**
 
 | Platform | RETURN 1 | Point | 1-hop | 2-hop | 3-hop | Filtered | Group-by |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | **P50 (ms)** |  |  |  |  |  |  |  |
-| Kuzu (embedded, reference only) | 0.05 | 0.12 | 1.54 | 1.68 | 13.32 | 0.24 | 0.35 |
+| Kuzu (embedded, reference only) | 0.04 | 0.12 | 1.76 | 1.76 | 18.51 | 0.23 | 0.36 |
 | **P95 (ms)** |  |  |  |  |  |  |  |
-| Kuzu (embedded, reference only) | 0.07 | 0.15 | 2.11 | 2.87 | 239.80 | 0.32 | 0.37 |
+| Kuzu (embedded, reference only) | 0.05 | 0.25 | 3.43 | 3.28 | 241.95 | 0.25 | 0.38 |
 
 **Mixed workload**
 
 | Platform | 1 client (qps) | 10 clients (qps) | 40 clients (qps) | Read p95 @ max | Errors |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Kuzu (embedded, reference only) | 528.3 | 458.6 | 506.8 | 224.98 | 50 |
+| Kuzu (embedded, reference only) | 447.1 | 491.9 | 477.4 | 235.82 | 50 |
 
 **Footprint**
 
 | Platform | Observed RSS | % of cap | Store on disk | Engine-reported | Source |
 | --- | ---: | ---: | ---: | --- | --- |
-| Kuzu (embedded, reference only) | not observable | - | - | yes | store file size |
+| Kuzu (embedded, reference only) | not observable | - | 9.3 MB | yes | store file size |
 
 ### Not run
 
@@ -240,6 +242,42 @@ No credentials configured, so these were skipped rather than failed:
 - `falkordb-cloud`: missing FALKORDB_CLOUD_HOST, FALKORDB_CLOUD_PASSWORD
 
 <!-- END GENERATED RESULTS -->
+
+## What the numbers say
+
+Full reasoning in [ANALYSIS.md](docs/ANALYSIS.md). The short version, from the
+resource-matched track:
+
+**Most of these metrics do not survive repetition, and that is the most important
+result here.** Two runs with byte-identical configuration disagree by 60-360% on
+ingest throughput and 40-client throughput, while agreeing to within 6% on
+`RETURN 1`. The cause is almost certainly mine: the client machine was not idle. So
+ingest and saturated-throughput columns are ranges, not values, and only differences
+of an order of magnitude are safe to read from them. [VARIANCE.md](docs/VARIANCE.md)
+is generated rather than described for exactly this reason.
+
+**There is no winner, and the ranking inverts by question.**
+
+- **Memgraph** ingests roughly an order of magnitude faster than Neo4j and answers
+  1-hop and 2-hop fastest. It is also the only engine that failed to finish the load
+  at some batch sizes, and the only one whose completion is non-deterministic.
+- **ArangoDB**, the one non-native graph store, has the **fastest 3-hop**. That is the
+  opposite of what the index-free-adjacency argument predicts, and the reason is that
+  it visits each vertex once where the Cypher engines enumerate paths. At 198k
+  relationships everything is cache-resident, so pointer-chasing has nothing to beat.
+- **FalkorDB** wins throughput and point lookups outright, and loses 3-hop by 10x.
+  Under a sparse-matrix model the 3-hop frontier stops being sparse.
+- **Neo4j** has a p95 24x its p50 **on a query that touches no data**, which cannot be
+  a graph result. It idles at 99.9% of the memory cap, so it is periodically not
+  running rather than slow.
+- **Kùzu**, in-process, answers `RETURN 1` in 0.042 ms against 0.25-2.99 ms over a
+  socket. Roughly 0.2-0.3 ms of every Bolt query here is transport, which means some
+  apparent engine wins are transport wins.
+
+**Durability costs far more than the graph does.** Kùzu stores the entire graph,
+durably, in 9.3 MB. Neo4j leaves **542 MB** on disk, over half the declared 1 GB
+allowance, almost all transaction logs. The two engines sitting under 60% of the
+memory cap are exactly the two I configured non-durable.
 
 ## Three bugs that produced fast, clean, wrong numbers
 
