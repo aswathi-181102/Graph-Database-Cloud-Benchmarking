@@ -149,7 +149,7 @@ def build(run_ids: list[str]) -> int:
 
     out = paths.DOCS_DIR / "VARIANCE.md"
     out.write_text("\n".join(lines) + "\n")
-    print(f"wrote {out.relative_to(paths.ROOT)}")
+    print(f"wrote {paths.display(out)}")
     return 0
 
 

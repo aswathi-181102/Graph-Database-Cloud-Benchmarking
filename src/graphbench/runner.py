@@ -247,7 +247,7 @@ def run_all(
     summary["finished_at"] = datetime.now(UTC).isoformat(timespec="seconds")
     (out_dir / "run.json").write_text(json.dumps(summary, indent=2, default=str))
 
-    _say(f"\nwrote {out_dir.relative_to(paths.ROOT)}/")
+    _say(f"\nwrote {paths.display(out_dir)}/")
     _print_verification(summary["verification"])
     return summary
 

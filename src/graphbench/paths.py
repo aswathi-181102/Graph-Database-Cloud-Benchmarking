@@ -16,6 +16,19 @@ PLATFORMS_FILE = CONFIG_DIR / "platforms.yaml"
 WORKLOADS_FILE = CONFIG_DIR / "workloads.yaml"
 
 
+def display(path: Path) -> str:
+    """Repo-relative if it is inside the repo, absolute otherwise.
+
+    relative_to() raises on anything outside ROOT, which is how a results dir
+    pointed somewhere else turned into a ValueError at the end of an otherwise
+    successful run.
+    """
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
 def ensure_dirs() -> None:
     for d in (RAW_DIR, PREPARED_DIR, RESULTS_DIR, CHARTS_DIR):
         d.mkdir(parents=True, exist_ok=True)
