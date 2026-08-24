@@ -27,6 +27,33 @@ First error seen:
 batch 17: TransientError: {code: Memgraph.TransientError.MemgraphError.MemgraphError} {message: Memory limit exceeded! Attempting to allocate a chunk of 900.00KiB which would put the current use to 22
 ```
 
+## Neo4j 5 Community (capped)
+
+| Batch | Attempt | Result | Edges loaded | Total (s) | Nodes/s | Rels/s | Failed batches |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 1,000 | 1 | complete | 198,050 | 144.76 | 760 | 2,936 | 0 |
+| 2,500 | 1 | complete | 198,050 | 93.36 | 1,220 | 3,009 | 0 |
+| 5,000 | 1 | complete | 198,050 | 132.69 | 1,197 | 1,921 | 0 |
+| 10,000 | 1 | complete | 198,050 | 118.18 | 899 | 2,684 | 0 |
+
+## ArangoDB (capped)
+
+| Batch | Attempt | Result | Edges loaded | Total (s) | Nodes/s | Rels/s | Failed batches |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 1,000 | 1 | complete | 198,050 | 7.6 | 46,124 | 28,031 | 0 |
+| 2,500 | 1 | complete | 198,050 | 8.27 | 51,280 | 25,639 | 0 |
+| 5,000 | 1 | complete | 198,050 | 9.13 | 53,853 | 23,005 | 0 |
+| 10,000 | 1 | complete | 198,050 | 8.88 | 56,453 | 23,533 | 0 |
+
+## FalkorDB (capped)
+
+| Batch | Attempt | Result | Edges loaded | Total (s) | Nodes/s | Rels/s | Failed batches |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 1,000 | 1 | complete | 198,050 | 33.5 | 167,245 | 5,971 | 0 |
+| 2,500 | 1 | complete | 198,050 | 69.46 | 157,288 | 2,866 | 0 |
+| 5,000 | 1 | complete | 198,050 | 160.33 | 9,376 | 1,263 | 0 |
+| 10,000 | 1 | complete | 198,050 | 59.74 | 23,454 | 3,400 | 0 |
+
 ## What this changes
 
 The batch size used for the reported benchmark runs is whatever this sweep says every engine can complete, applied identically to all of them. If one engine cannot finish the load at any batch size, that is recorded as its result rather than worked around.

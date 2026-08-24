@@ -1,0 +1,190 @@
+{
+  "started_at": "2026-08-24T05:31:50+00:00",
+  "dataset": "ca-astroph",
+  "nodes": 18771,
+  "edges": 198050,
+  "batch_sizes": [
+    1000,
+    2500,
+    5000,
+    10000
+  ],
+  "repeats": 1,
+  "platforms": {
+    "neo4j-local": {
+      "display": "Neo4j 5 Community (capped)",
+      "engine": "neo4j",
+      "attempts": [
+        {
+          "batch_size": 1000,
+          "reset_seconds": 62.9,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 144.76,
+          "nodes_per_second": 760.1307641221995,
+          "rels_per_second": 2935.92409227182,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 2500,
+          "reset_seconds": 61.3,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 93.36,
+          "nodes_per_second": 1220.4229996782558,
+          "rels_per_second": 3008.6230794747353,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 5000,
+          "reset_seconds": 123.3,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 132.69,
+          "nodes_per_second": 1197.4834697900103,
+          "rels_per_second": 1921.073095037972,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 10000,
+          "reset_seconds": 51.9,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 118.18,
+          "nodes_per_second": 899.0929930486237,
+          "rels_per_second": 2683.5272315791144,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        }
+      ]
+    },
+    "arango-local": {
+      "display": "ArangoDB (capped)",
+      "engine": "arangodb",
+      "attempts": [
+        {
+          "batch_size": 1000,
+          "reset_seconds": 20.0,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 7.6,
+          "nodes_per_second": 46124.01957942387,
+          "rels_per_second": 28030.52727857664,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 2500,
+          "reset_seconds": 12.8,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 8.27,
+          "nodes_per_second": 51279.815496597,
+          "rels_per_second": 25638.690875238295,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 5000,
+          "reset_seconds": 12.5,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 9.13,
+          "nodes_per_second": 53852.62175313385,
+          "rels_per_second": 23004.828095467084,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 10000,
+          "reset_seconds": 13.5,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 8.88,
+          "nodes_per_second": 56453.10254442465,
+          "rels_per_second": 23532.801701537042,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        }
+      ]
+    },
+    "falkordb-local": {
+      "display": "FalkorDB (capped)",
+      "engine": "falkordb",
+      "attempts": [
+        {
+          "batch_size": 1000,
+          "reset_seconds": 6.8,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 33.5,
+          "nodes_per_second": 167244.68589940332,
+          "rels_per_second": 5970.553122086508,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 2500,
+          "reset_seconds": 6.4,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 69.46,
+          "nodes_per_second": 157288.11854842387,
+          "rels_per_second": 2865.7405939663568,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 5000,
+          "reset_seconds": 16.8,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 160.33,
+          "nodes_per_second": 9376.445869453652,
+          "rels_per_second": 1263.160362682231,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        },
+        {
+          "batch_size": 10000,
+          "reset_seconds": 8.1,
+          "nodes_loaded": 18771,
+          "edges_loaded": 198050,
+          "complete": true,
+          "total_seconds": 59.74,
+          "nodes_per_second": 23454.359724682025,
+          "rels_per_second": 3400.347577283101,
+          "failed_batches": 0,
+          "first_error": null,
+          "attempt": 1
+        }
+      ]
+    }
+  },
+  "finished_at": "2026-08-24T05:54:54+00:00"
+}
