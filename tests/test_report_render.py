@@ -7,9 +7,15 @@ from graphbench.report import render, variance
 
 @pytest.fixture
 def run_dir(tmp_path, monkeypatch):
-    """A minimal but structurally real results directory."""
+    """A minimal but structurally real results directory.
+
+    ROOT is redirected as well as RESULTS_DIR, because render.build() injects into
+    ROOT/README.md. Without that this fixture rewrote the repo's own README with
+    fixture data, which is how "Engine One" ended up in it.
+    """
     monkeypatch.setattr(render.paths, "RESULTS_DIR", tmp_path)
     monkeypatch.setattr(variance.paths, "RESULTS_DIR", tmp_path)
+    monkeypatch.setattr(render.paths, "ROOT", tmp_path)
 
     def write(run_id, load_seconds, hop3):
         d = tmp_path / run_id
@@ -125,13 +131,28 @@ def run_dir(tmp_path, monkeypatch):
     return write
 
 
-def test_report_renders_and_names_its_source_run(run_dir, tmp_path, monkeypatch):
+def test_report_survives_a_missing_readme(run_dir, tmp_path, monkeypatch):
+    """A renamed or absent README should not cost you the report already written."""
     monkeypatch.setattr(render.paths, "DOCS_DIR", tmp_path / "docs")
     monkeypatch.setattr(render.paths, "CHARTS_DIR", tmp_path / "docs" / "charts")
     (tmp_path / "docs").mkdir()
     run_dir("r1", 10.0, 5.0)
 
     assert render.build("r1") == 0
+    assert (tmp_path / "docs" / "RESULTS.md").exists()
+
+
+def test_report_renders_and_names_its_source_run(run_dir, tmp_path, monkeypatch):
+    monkeypatch.setattr(render.paths, "DOCS_DIR", tmp_path / "docs")
+    monkeypatch.setattr(render.paths, "CHARTS_DIR", tmp_path / "docs" / "charts")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "README.md").write_text(
+        f"# T\n\n{render.BEGIN_MARKER}\nstale\n{render.END_MARKER}\n"
+    )
+    run_dir("r1", 10.0, 5.0)
+
+    assert render.build("r1") == 0
+    assert "Engine One" in (tmp_path / "README.md").read_text()
     text = (tmp_path / "docs" / "RESULTS.md").read_text()
     assert "r1" in text
     assert "Engine One" in text
@@ -143,6 +164,7 @@ def test_report_states_the_verification_outcome(run_dir, tmp_path, monkeypatch):
     monkeypatch.setattr(render.paths, "CHARTS_DIR", tmp_path / "docs" / "charts")
     (tmp_path / "docs").mkdir()
     run_dir("r1", 10.0, 5.0)
+    (tmp_path / "README.md").write_text("no markers")
     render.build("r1")
     text = (tmp_path / "docs" / "RESULTS.md").read_text()
     assert "identical values on **12**" in text
@@ -153,6 +175,7 @@ def test_report_lists_skipped_platforms_as_skipped(run_dir, tmp_path, monkeypatc
     monkeypatch.setattr(render.paths, "CHARTS_DIR", tmp_path / "docs" / "charts")
     (tmp_path / "docs").mkdir()
     run_dir("r1", 10.0, 5.0)
+    (tmp_path / "README.md").write_text("no markers")
     render.build("r1")
     text = (tmp_path / "docs" / "RESULTS.md").read_text()
     assert "cognodb-cloud" in text
