@@ -76,7 +76,7 @@ chosen along the architectural axes that could plausibly explain a difference
 against *that* design, not by popularity.
 
 | Engine | Axis | Why it earns a slot |
-|---|---|---|
+| --- | --- | --- |
 | **CognoDB Cloud** c0 | disk-backed, cached, Cypher/Bolt | the subject |
 | **Neo4j** 5.26 Community | native graph, disk, JVM | the reference implementation of Cypher and Bolt that CognoDB claims drop-in driver compatibility with. Without it there is no baseline |
 | **Memgraph** 3.12 | native graph, **in-memory**, C++ | CognoDB's own site claims Memgraph crashed under a tight memory cap. That is a testable claim |

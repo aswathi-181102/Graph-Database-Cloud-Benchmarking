@@ -31,4 +31,11 @@ looked like before they were found:
   run.json came out. Also the first run where CognoDB completed every workload,
   which is what confirmed the reconnect fix.
 
-The published runs are the ones in `results/`.
+- `20260824T060418Z` and `20260824T093849Z` - two complete 5-platform runs, but at
+  the **256 MB** cap taken from the assignment brief before a provisioned CognoDB
+  instance showed c0 is actually 512 MB. Valid data for the envelope they ran in,
+  and the source of the original variance analysis, but not comparable with the
+  published 512 MB runs. Moved here so `graphbench compare` cannot silently mix two
+  different resource envelopes into one variance figure.
+
+The published runs are the ones in `results/`, all at the corrected 512 MB cap.
