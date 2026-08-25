@@ -16,24 +16,37 @@ from pathlib import Path
 
 from graphbench import paths
 
-# (label, how to pull it out of a platform record)
-METRICS: list[tuple[str, str]] = [
-    ("load total (s)", "load.total_seconds"),
-    ("nodes/s", "load.nodes_per_second"),
-    ("rels/s", "load.rels_per_second"),
-    ("RETURN 1 p50", "read.baseline_noop.p50_ms"),
-    ("point p50", "read.point_lookup.p50_ms"),
-    ("1-hop p50", "read.traversal_1hop.p50_ms"),
-    ("2-hop p50", "read.traversal_2hop.p50_ms"),
-    ("3-hop p50", "read.traversal_3hop.p50_ms"),
-    ("3-hop p95", "read.traversal_3hop.p95_ms"),
-    ("group-by p50", "read.aggregation_groupby_cohort.p50_ms"),
-    ("qps @1", "mixed.1.qps"),
-    ("qps @10", "mixed.10.qps"),
-    ("qps @40", "mixed.40.qps"),
+# (label, extraction path, absolute floor below which a difference is not real)
+#
+# The floor matters more than it looks. Kùzu's RETURN 1 moved from 0.04ms to 0.20ms
+# between two runs, which is a 338% spread and 0.16ms of absolute difference. A
+# percentage on a sub-millisecond measurement is reporting the resolution of a
+# Python-timed client call, not the stability of the engine. Flagging that as
+# "unstable" alongside CognoDB's 3-hop p95 moving by 10.7 *seconds* would put two
+# completely different things in the same bucket.
+#
+# So a metric is unstable only when the relative spread AND the absolute difference
+# both clear their thresholds. Latency floors are 0.5ms, which is roughly where
+# client-side timing of a network round trip stops being trustworthy. Rate floors are
+# generous because a few hundred rows/second is noise on a five-figure number.
+METRICS: list[tuple[str, str, float]] = [
+    ("load total (s)", "load.total_seconds", 1.0),
+    ("nodes/s", "load.nodes_per_second", 500.0),
+    ("rels/s", "load.rels_per_second", 500.0),
+    ("RETURN 1 p50", "read.baseline_noop.p50_ms", 0.5),
+    ("point p50", "read.point_lookup.p50_ms", 0.5),
+    ("1-hop p50", "read.traversal_1hop.p50_ms", 0.5),
+    ("2-hop p50", "read.traversal_2hop.p50_ms", 0.5),
+    ("3-hop p50", "read.traversal_3hop.p50_ms", 0.5),
+    ("3-hop p95", "read.traversal_3hop.p95_ms", 0.5),
+    ("group-by p50", "read.aggregation_groupby_cohort.p50_ms", 0.5),
+    ("qps @1", "mixed.1.qps", 5.0),
+    ("qps @10", "mixed.10.qps", 5.0),
+    ("qps @40", "mixed.40.qps", 5.0),
 ]
 
-# Above this spread, a single run's figure is not a measurement.
+# Above this spread, a single run's figure is not a measurement, provided the
+# absolute difference also clears the metric's floor.
 UNSTABLE_PERCENT = 25.0
 
 
@@ -88,10 +101,17 @@ def build(run_ids: list[str]) -> int:
         + ".",
         "",
         "Spread is the range as a percentage of the smaller value, not a standard "
-        f"deviation: with {len(run_ids)} runs a range is all the data supports. Rows "
-        f"marked **unstable** vary by more than {UNSTABLE_PERCENT:.0f}%, which means a "
-        "single run's figure for that metric is not a measurement and should not be "
-        "used to rank engines.",
+        f"deviation: with {len(run_ids)} runs a range is all the data supports. Abs is "
+        "the same difference in the metric's own units.",
+        "",
+        f"A row is **unstable** when the spread exceeds {UNSTABLE_PERCENT:.0f}% *and* "
+        "the absolute difference clears a per-metric floor. Both conditions are needed: "
+        "0.04ms against 0.20ms is a 338% spread and 0.16ms of real difference, which is "
+        "the resolution of a Python-timed client call rather than engine instability. "
+        "Rows that clear the percentage but not the floor say so.",
+        "",
+        "A single run's figure for an unstable metric is not a measurement and should "
+        "not be used to rank engines.",
         "",
     ]
 
@@ -102,10 +122,15 @@ def build(run_ids: list[str]) -> int:
             (runs[r][pid]["platform"]["display"] for r in run_ids if pid in runs[r]), pid
         )
         lines += [f"## {display}", ""]
-        header = "| Metric | " + " | ".join(r[-9:] for r in run_ids) + " | Spread | |"
-        lines += [header, "| --- | " + " | ".join(["---:"] * len(run_ids)) + " | ---: | --- |"]
+        header = (
+            "| Metric | " + " | ".join(r[-9:] for r in run_ids) + " | Spread | Abs | |"
+        )
+        lines += [
+            header,
+            "| --- | " + " | ".join(["---:"] * len(run_ids)) + " | ---: | ---: | --- |",
+        ]
 
-        for label, path in METRICS:
+        for label, path, floor in METRICS:
             values = []
             cells = []
             for run_id in run_ids:
@@ -117,12 +142,18 @@ def build(run_ids: list[str]) -> int:
             if len(values) < 2:
                 continue
             spread = _spread(values)
-            unstable = spread > UNSTABLE_PERCENT
+            absolute = max(values) - min(values)
+            unstable = spread > UNSTABLE_PERCENT and absolute >= floor
             if unstable:
                 unstable_metrics[label] = unstable_metrics.get(label, 0) + 1
+            note = ""
+            if spread > UNSTABLE_PERCENT and not unstable:
+                note = f"below the {floor:g} floor"
+            elif unstable:
+                note = "**unstable**"
             lines.append(
-                f"| {label} | " + " | ".join(cells) + f" | {spread:+.0f}% | "
-                + ("**unstable**" if unstable else "") + " |"
+                f"| {label} | " + " | ".join(cells)
+                + f" | {spread:+.0f}% | {absolute:,.2f} | {note} |"
             )
         lines.append("")
 

@@ -1,0 +1,134 @@
+{
+  "run_id": "20260825T050246Z",
+  "started_at": "2026-08-25T05:02:46+00:00",
+  "environment": {
+    "client_os": "Darwin 25.5.0",
+    "client_machine": "arm64",
+    "client_processor": "arm",
+    "client_cpu_count": 8,
+    "client_memory_bytes": 8589934592,
+    "python": "3.13.15",
+    "packages": {
+      "neo4j": "5.28.4",
+      "FalkorDB": "1.7.1",
+      "python-arango": "8.3.3",
+      "kuzu": "0.11.3"
+    },
+    "docker": "Docker version 29.7.2, build a7dcaa6",
+    "git_commit": "b3bf45b4782e8ab46ceab05c30462717d1da8833",
+    "git_dirty": false
+  },
+  "dataset": {
+    "dataset": "ca-astroph",
+    "source_url": "https://snap.stanford.edu/data/ca-AstroPh.txt.gz",
+    "citation": "J. Leskovec, J. Kleinberg, C. Faloutsos. Graph Evolution: Densification and Shrinking Diameters. ACM TKDD, 2007. SNAP ca-AstroPh.",
+    "raw_file": "ca-AstroPh.txt.gz",
+    "raw_bytes": 1453950,
+    "raw_sha256": "51bf1e2cace269b884481a8502474efa67c0fd01d998ff7f5a154d7d3e527f27",
+    "undirected": true,
+    "node_label": "Author",
+    "rel_type": "COAUTHOR",
+    "nodes": 18771,
+    "edges": 198050,
+    "sampled": false,
+    "target_edges": null,
+    "seed": 7919,
+    "degree_min": 1,
+    "degree_max": 504,
+    "degree_mean": 21.102,
+    "cohorts": 32,
+    "start_nodes": 256,
+    "degree_band": [
+      5,
+      50
+    ],
+    "prepared_at": "2026-08-24T10:14:34+00:00"
+  },
+  "workloads": {
+    "batch_size": 1000,
+    "iterations": 100,
+    "warmup": 20,
+    "hops": [
+      1,
+      2,
+      3
+    ],
+    "timeout_s": 30,
+    "concurrency": [
+      1,
+      10,
+      40
+    ],
+    "duration_s": 30,
+    "read_ratio": 0.9,
+    "cohort": 7,
+    "min_degree": 10,
+    "mixed_skipped": false,
+    "restart_local_containers": true
+  },
+  "skipped": [
+    {
+      "id": "neo4j-aura",
+      "reason": "missing NEO4J_AURA_URI, NEO4J_AURA_PASSWORD"
+    },
+    {
+      "id": "memgraph-cloud",
+      "reason": "missing MEMGRAPH_CLOUD_URI, MEMGRAPH_CLOUD_PASSWORD"
+    },
+    {
+      "id": "arango-cloud",
+      "reason": "missing ARANGO_CLOUD_URL, ARANGO_CLOUD_PASSWORD"
+    },
+    {
+      "id": "falkordb-cloud",
+      "reason": "missing FALKORDB_CLOUD_HOST, FALKORDB_CLOUD_PASSWORD"
+    }
+  ],
+  "platforms": [
+    {
+      "id": "cognodb-cloud",
+      "status": "partial",
+      "duration_s": 504.2,
+      "errors": 0
+    },
+    {
+      "id": "neo4j-local",
+      "status": "failed",
+      "duration_s": 1.0,
+      "errors": 2
+    },
+    {
+      "id": "memgraph-local",
+      "status": "failed",
+      "duration_s": 0.3,
+      "errors": 2
+    },
+    {
+      "id": "arango-local",
+      "status": "failed",
+      "duration_s": 18.5,
+      "errors": 2
+    },
+    {
+      "id": "falkordb-local",
+      "status": "failed",
+      "duration_s": 0.8,
+      "errors": 2
+    },
+    {
+      "id": "kuzu-embedded",
+      "status": "ok",
+      "duration_s": 127.2,
+      "errors": 0
+    }
+  ],
+  "verification": {
+    "compared": 309,
+    "agree": true,
+    "mismatches": [],
+    "expectation_failures": [],
+    "monotonic_failures": [],
+    "clean": true
+  },
+  "finished_at": "2026-08-25T05:13:38+00:00"
+}

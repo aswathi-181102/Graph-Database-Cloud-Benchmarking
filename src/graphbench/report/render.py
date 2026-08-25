@@ -85,6 +85,10 @@ def inject_into_readme(
     markers mean the narrative around it stays hand-written.
     """
     readme = paths.ROOT / "README.md"
+    if not readme.exists():
+        # A missing or renamed README should not cost you the report that was
+        # already written.
+        return False
     text = readme.read_text()
     if BEGIN_MARKER not in text or END_MARKER not in text:
         return False

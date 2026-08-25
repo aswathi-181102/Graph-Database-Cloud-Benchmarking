@@ -4,17 +4,18 @@ Benchmarks **CognoDB Cloud** against **Neo4j**, **Memgraph**, **ArangoDB**,
 **FalkorDB** and **Kùzu** on the same dataset, the same queries, the same client
 machine, and the same amount of CPU and RAM.
 
-The headline is not which database won. It is that at 0.5 vCPU / 256 MB, the
+The headline is not which database won. It is that at 0.5 vCPU / 512 MB, the
 question "did it finish at all" turns out to matter more than any latency number,
 and three separate attempts at this benchmark produced fast, clean, completely
 wrong results before the correctness checks caught them.
 
+- **[Walkthrough](docs/WALKTHROUGH.md) - start here: what this is, how it works file by file, and the six bugs that shaped it**
 - [Results](docs/RESULTS.md) - full matrix, charts, per-iteration samples, verbatim errors
 - [Analysis](docs/ANALYSIS.md) - what the numbers show and why, plus what I would do differently
 - [Variance](docs/VARIANCE.md) - two identical runs diffed, and which metrics survive repetition
 - [Decisions](docs/DECISIONS.md) - every judgement call, and what this suite does not measure
 - [Calibration](docs/CALIBRATION.md) - measured batch size sweep across five batch sizes
-- [Local stack](docs/LOCAL_STACK.md) - what each engine needed before it fit in 256 MB
+- [Local stack](docs/LOCAL_STACK.md) - what each engine needed before it fit in 512 MB
 
 ## Why most graph benchmarks are not worth reading
 
@@ -22,7 +23,7 @@ Two failure modes account for almost all of them. Either the databases were not
 given the same hardware, or the "same query" was not actually the same query. This
 repo tries to close both, and then check that it succeeded rather than assume it.
 
-**Same hardware.** The resource envelope is 0.5 vCPU / 256 MB RAM / 1 GB disk,
+**Same hardware.** The resource envelope is 0.5 vCPU / 512 MB RAM / 1 GB disk,
 which is what CognoDB's free `c0` instance gets. Every engine in the primary track
 runs in Docker capped to exactly that, from one shared YAML anchor so the caps
 cannot drift apart.
@@ -67,7 +68,7 @@ backend), **TigerGraph** (GSQL, OLAP oriented, free tier has far more RAM),
 ## Two tracks, never mixed into one ranking
 
 Free cloud tiers are **not equal to each other**. Aura Free advertises 1 GB,
-Memgraph Cloud 2 GB, against CognoDB's 256 MB, and none of them can be dialled
+Memgraph Cloud 2 GB, against CognoDB's 512 MB, and none of them can be dialled
 down to match. Presenting one combined league table across those would be exactly
 the methodology error the brief warns about, so there are two tracks and they are
 reported separately:
@@ -94,7 +95,7 @@ SNAP **ca-AstroPh**, the arXiv astrophysics co-authorship network.
 **18,771 nodes / 198,050 relationships** after dedupe, sha256 pinned in the
 registry and re-verified on every fetch.
 
-Chosen because it clears the 100k relationship floor, fits 256 MB with indexes, is
+Chosen because it clears the 100k relationship floor, fits 512 MB with indexes, is
 a 1.5 MB download so a reproduction costs seconds rather than an hour, and has
 genuinely heavy-tailed degree (mean 21, max 504) which is what makes 2-hop and
 3-hop diverge instead of all looking the same.
@@ -110,7 +111,7 @@ byte-identical properties by construction and a stranger can reproduce them from
 the raw file alone.
 
 **Start nodes come from a degree band of 5 to 50, not uniform random.** A 3-hop
-expansion from a degree-504 hub on a 256 MB instance measures the OOM killer, and
+expansion from a degree-504 hub on a 512 MB instance measures the OOM killer, and
 under uniform sampling p95 would mostly record whether a run happened to draw a
 hub. This is a real limitation and not a free lunch: **these results describe
 mid-degree traversals and deliberately exclude hub behaviour.**
@@ -135,9 +136,9 @@ in the results JSON.
 
 <!-- BEGIN GENERATED RESULTS -->
 
-Run `r1` on **tiny** (5 nodes / 4 relationships). Regenerate with `make report`. Full detail, charts, per-iteration samples and verbatim errors: [docs/RESULTS.md](docs/RESULTS.md).
+Run `20260825T072533Z` on **ca-astroph** (18,771 nodes / 198,050 relationships). Regenerate with `make report`. Full detail, charts, per-iteration samples and verbatim errors: [docs/RESULTS.md](docs/RESULTS.md).
 
-**Cross-checked:** every platform returned identical values on 12 query results, so the latencies below are comparing equivalent queries.
+**Cross-checked:** every platform returned identical values on 404 query results, so the latencies below are comparing equivalent queries.
 
 ### Resource-matched track (primary)
 
@@ -147,40 +148,135 @@ Every engine in Docker at 0.5 vCPU / 256 MB, CognoDB's free c0 envelope, on one 
 
 | Platform | Track | Engine | Version | vCPU | RAM | Disk | Tier source |
 | --- | --- | --- | --- | ---: | ---: | ---: | --- |
-| Engine One | local | e1 | E1 1.0 | 0.5 | 256 MB | 1 GB | docker-compose.yml |
+| ArangoDB (capped) | local | arangodb | ArangoDB 3.12.10-1 | 0.5 | 512 MB | 1 GB | docker-compose.yml |
+| FalkorDB (capped) | local | falkordb | FalkorDB module 4.20.4 on Redis 8.6.3 | 0.5 | 512 MB | 1 GB | docker-compose.yml |
+| Memgraph (capped) | local | memgraph | Memgraph 3.12.0 | 0.5 | 512 MB | 1 GB | docker-compose.yml |
+| Neo4j 5 Community (capped) | local | neo4j | Neo4j Kernel 5.26.29 (community) | 0.5 | 512 MB | 1 GB | docker-compose.yml |
 
 **Data loading**
 
 | Platform | Nodes/s | Rels/s | Index build (s) | Total load (s) | Rows loaded | Load method |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Engine One | 100 | 200 | 0.10 | 10.0 | 9/9 | driver batching |
+| ArangoDB (capped) | 57,076 | 23,079 | 0.16 | 9.1 | 216,821/216,821 | python-arango, AQL batch INSERT (not import_bulk, see module docstring) |
+| FalkorDB (capped) | 140,082 | 4,770 | 0.18 | 41.8 | 216,821/216,821 | FalkorDB client over RESP, GRAPH.QUERY with UNWIND batches |
+| Memgraph (capped) | 35,714 | 73,491 | 0.07 | 3.3 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
+| Neo4j 5 Community (capped) | 838 | 4,016 | 11.99 | 83.7 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
 
 **Read latency (ms)**
 
-| Platform | RETURN 1 | Point | 1-hop | 3-hop | Filtered | Group-by |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| **P50 (ms)** |  |  |  |  |  |  |
-| Engine One | 0.30 | 0.40 | 0.50 | 5.00 | 0.60 | 1.00 |
-| **P95 (ms)** |  |  |  |  |  |  |
-| Engine One | 0.50 | 0.60 | 0.90 | 20.00 | 0.80 | 2.00 |
+| Platform | RETURN 1 | Point | 1-hop | 2-hop | 3-hop | Filtered | Group-by |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **P50 (ms)** |  |  |  |  |  |  |  |
+| ArangoDB (capped) | 1.61 | 1.16 | 1.37 | 1.65 | 6.76 | 1.21 | 5.28 |
+| FalkorDB (capped) | 0.40 | 0.42 | 0.49 | 0.88 | 58.06 | 0.85 | 2.90 |
+| Memgraph (capped) | 0.45 | 0.47 | 0.47 | 0.67 | 11.84 | 0.92 | 4.44 |
+| Neo4j 5 Community (capped) | 3.94 | 4.18 | 2.68 | 5.72 | 7.51 | 2.82 | 10.95 |
+| **P95 (ms)** |  |  |  |  |  |  |  |
+| ArangoDB (capped) | 14.88 | 2.24 | 2.76 | 3.10 | 64.80 | 1.98 | 37.80 |
+| FalkorDB (capped) | 0.49 | 0.51 | 0.72 | 2.92 | 413.66 | 1.05 | 4.67 |
+| Memgraph (capped) | 0.64 | 0.65 | 0.80 | 1.96 | 143.31 | 2.36 | 48.40 |
+| Neo4j 5 Community (capped) | 73.55 | 92.18 | 75.64 | 86.90 | 94.75 | 74.30 | 97.22 |
 
 **Mixed workload**
 
-| Platform | 1 client (qps) | Read p95 @ max | Errors |
-| --- | ---: | ---: | ---: |
-| Engine One | 100.0 | 1.00 | 0 |
+| Platform | 1 client (qps) | 10 clients (qps) | 40 clients (qps) | Read p95 @ max | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ArangoDB (capped) | 627.3 | 654.2 | 459.7 | 193.60 | 50 |
+| FalkorDB (capped) | 939.8 | 880.9 | 839.3 | 90.43 | 0 |
+| Memgraph (capped) | 570.9 | 359.6 | 433.2 | 188.80 | 0 |
+| Neo4j 5 Community (capped) | 175.5 | 85.5 | 85.2 | 1000.97 | 1 |
 
 **Footprint**
 
 | Platform | Observed RSS | % of cap | Store on disk | Engine-reported | Source |
 | --- | ---: | ---: | ---: | --- | --- |
-| Engine One | 100MiB / 256MiB | 39% | 1.0 MB | yes | fake |
+| ArangoDB (capped) | 420.2MiB / 512MiB | 82.08% | 75.4 MB | yes | collection statistics() |
+| FalkorDB (capped) | 115.5MiB / 512MiB | 22.55% | - | yes | INFO memory + GRAPH.MEMORY |
+| Memgraph (capped) | 145.5MiB / 512MiB | 28.41% | 0.2 MB | yes | SHOW STORAGE INFO |
+| Neo4j 5 Community (capped) | 508.4MiB / 512MiB | 99.29% | 542.5 MB | yes | dbms.queryJmx |
+
+### Managed free tier track (not resource-matched)
+
+Free tiers exactly as they ship. These tiers are **not equal to each other** (Aura Free advertises 1 GB, Memgraph Cloud 2 GB against CognoDB's 256 MB), so this table answers "what do you get from the free tier you would actually sign up for" and nothing stronger. Ranking these against the capped track would be a methodology error.
+
+**Tiers**
+
+| Platform | Track | Engine | Version | vCPU | RAM | Disk | Tier source |
+| --- | --- | --- | --- | ---: | ---: | ---: | --- |
+| CognoDB Cloud (c0 free) | cloud | cognodb | CognoDB v0.9.11 (declared in console, no version procedure on the wire) | 0.5 | 512 MB | 1 GB | https://console.cognodb.com (provisioned instance, 2026-08-24) |
+
+**Data loading**
+
+| Platform | Nodes/s | Rels/s | Index build (s) | Total load (s) | Rows loaded | Load method |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| CognoDB Cloud (c0 free) | 2,795 | 3,258 | 1.99 | 69.5 | 216,821/216,821 | official Neo4j Bolt driver, UNWIND batches |
+
+**Read latency (ms)**
+
+| Platform | RETURN 1 | Point | 1-hop | 2-hop | 3-hop | Filtered | Group-by |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **P50 (ms)** |  |  |  |  |  |  |  |
+| CognoDB Cloud (c0 free) | 303.97 | 296.53 | 304.26 | 284.65 | 862.43 ⚠ | 303.33 ⚠ | 292.01 |
+| **P95 (ms)** |  |  |  |  |  |  |  |
+| CognoDB Cloud (c0 free) | 345.93 | 351.07 | 319.75 | 309.63 | 13830.29 ⚠ | 345.50 ⚠ | 351.44 |
+
+**Mixed workload**
+
+| Platform | 1 client (qps) | 10 clients (qps) | 40 clients (qps) | Read p95 @ max | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| CognoDB Cloud (c0 free) | 3.3 | 37.9 | 88.6 | 813.05 | 0 |
+
+**Footprint**
+
+| Platform | Observed RSS | % of cap | Store on disk | Engine-reported | Source |
+| --- | ---: | ---: | ---: | --- | --- |
+| CognoDB Cloud (c0 free) | not observable | - | - | not observable | - |
+
+### Embedded reference (not ranked)
+
+In-process, so there is no network round trip at all. Included as a floor: the gap between this and the Bolt engines is protocol and network cost rather than graph engine cost.
+
+**Tiers**
+
+| Platform | Track | Engine | Version | vCPU | RAM | Disk | Tier source |
+| --- | --- | --- | --- | ---: | ---: | ---: | --- |
+| Kuzu (embedded, reference only) | reference | kuzu | Kuzu 0.11.3 (embedded, in-process) | - | 512 MB | 1 GB | graphbench/adapters/kuzu.py |
+
+**Data loading**
+
+| Platform | Nodes/s | Rels/s | Index build (s) | Total load (s) | Rows loaded | Load method |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Kuzu (embedded, reference only) | 45,888 | 8,114 | 0.03 | 24.8 | 216,821/216,821 | embedded kuzu, in-process Cypher UNWIND batches |
+
+**Read latency (ms)**
+
+| Platform | RETURN 1 | Point | 1-hop | 2-hop | 3-hop | Filtered | Group-by |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **P50 (ms)** |  |  |  |  |  |  |  |
+| Kuzu (embedded, reference only) | 0.04 | 0.11 | 1.60 | 1.79 | 16.31 | 0.25 | 0.37 |
+| **P95 (ms)** |  |  |  |  |  |  |  |
+| Kuzu (embedded, reference only) | 0.06 | 0.13 | 2.07 | 3.13 | 302.35 | 0.36 | 0.41 |
+
+**Mixed workload**
+
+| Platform | 1 client (qps) | 10 clients (qps) | 40 clients (qps) | Read p95 @ max | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Kuzu (embedded, reference only) | 499.7 | 509.8 | 510.1 | 228.80 | 50 |
+
+**Footprint**
+
+| Platform | Observed RSS | % of cap | Store on disk | Engine-reported | Source |
+| --- | ---: | ---: | ---: | --- | --- |
+| Kuzu (embedded, reference only) | not observable | - | 9.3 MB | yes | store file size |
 
 ### Not run
 
 No credentials configured, so these were skipped rather than failed:
 
-- `cognodb-cloud`: missing COGNODB_URI
+- `neo4j-aura`: missing NEO4J_AURA_URI, NEO4J_AURA_PASSWORD
+- `memgraph-cloud`: missing MEMGRAPH_CLOUD_URI, MEMGRAPH_CLOUD_PASSWORD
+- `arango-cloud`: missing ARANGO_CLOUD_URL, ARANGO_CLOUD_PASSWORD
+- `falkordb-cloud`: missing FALKORDB_CLOUD_HOST, FALKORDB_CLOUD_PASSWORD
 
 <!-- END GENERATED RESULTS -->
 
@@ -355,7 +451,7 @@ Stated plainly, because the gaps matter as much as the numbers.
 Hub-node traversal (start nodes are capped at degree 50). Graphs larger than RAM,
 which is the regime CognoDB's disk-backed design exists for and where it should
 look best. Write-heavy workloads. Cold start from a stopped engine. Clustering,
-replication or failover. Anything above the 256 MB tier.
+replication or failover. Anything above the 512 MB tier.
 
 And it does not reproduce CognoDB's published figures of 0.27 ms 2-hop and 74,000
 reads/sec. Those are their dataset on their hardware; this is a different dataset
@@ -374,7 +470,7 @@ substitution, cross-platform verification, the read and mixed workload loops, th
 runner, and the report generators all sit between 83% and 100%. A fake in-memory
 engine (`tests/conftest.py`) implements the real adapter contract, which is what
 makes the runner and the workload loops testable without Docker, including the
-failure paths that would otherwise need a 256 MB engine to OOM on cue.
+failure paths that would otherwise need a 512 MB engine to OOM on cue.
 
 The **transport** half of each adapter is not unit tested, and deliberately so.
 Mocking a Bolt session tests the mock. Those paths are covered by actually running

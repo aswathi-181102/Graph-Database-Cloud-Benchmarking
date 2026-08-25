@@ -5,7 +5,7 @@
 # docs/DECISIONS.md sections 1 and 2.
 #
 # Short version: track "local" is Docker with every engine capped to CognoDB's
-# 0.5 vCPU / 256 MB, and that is the resource-fair comparison. Track "cloud" is
+# 0.5 vCPU / 512 MB, and that is the resource-fair comparison. Track "cloud" is
 # managed free tiers as they actually ship, which are not equal to each other and
 # are labelled as such. Track "reference" is Kuzu, embedded, not ranked.
 
@@ -20,14 +20,27 @@ platforms:
     adapter: bolt
     track: cloud
     tier:
-      name: c0 free
+      # Read off a provisioned instance, not the assignment brief. The brief says
+      # 256 MB; the console reports c0 = 512 MB. Everything else here is also from
+      # the console and none of it appears in the brief.
+      name: c0 free (512 MB)
       vcpu: 0.5
-      ram_mb: 256
+      ram_mb: 512
       disk_gb: 1
       # Burstable matters: a 100-iteration read loop can drain a CPU credit
       # balance, and the tail latency then reflects throttling, not the engine.
       burstable: true
-      source: https://cognodb.com/pricing
+      notes: >
+        Observed on instance db-d43f2c7d, region us-east4, server v0.9.11:
+        burst to 0.5 vCPU, 512 MB memory, 1 GiB storage, up to 500 disk IOPS,
+        200 max connections, and a 50,000 row cap on any single result. The row
+        cap does not bind here since every measured query returns counts, but it
+        would silently truncate a workload that returned rows.
+        Region is us-east4 while the client is in India, so CognoDB's raw latency
+        includes an intercontinental round trip. That is what the RETURN 1
+        baseline exists to separate out.
+      declared_version: CognoDB v0.9.11
+      source: https://console.cognodb.com (provisioned instance, 2026-08-24)
     connection:
       uri: ${COGNODB_URI}
       user: ${COGNODB_USER:-cognodb}
@@ -118,9 +131,9 @@ platforms:
     adapter: bolt
     track: local
     tier:
-      name: docker 0.5cpu/256m
+      name: docker 0.5cpu/512m
       vcpu: 0.5
-      ram_mb: 256
+      ram_mb: 512
       disk_gb: 1
       source: docker-compose.yml
     connection:
@@ -138,9 +151,9 @@ platforms:
     adapter: bolt
     track: local
     tier:
-      name: docker 0.5cpu/256m
+      name: docker 0.5cpu/512m
       vcpu: 0.5
-      ram_mb: 256
+      ram_mb: 512
       disk_gb: 1
       source: docker-compose.yml
     connection:
@@ -158,9 +171,9 @@ platforms:
     adapter: arango
     track: local
     tier:
-      name: docker 0.5cpu/256m
+      name: docker 0.5cpu/512m
       vcpu: 0.5
-      ram_mb: 256
+      ram_mb: 512
       disk_gb: 1
       source: docker-compose.yml
     connection:
@@ -178,9 +191,9 @@ platforms:
     adapter: falkor
     track: local
     tier:
-      name: docker 0.5cpu/256m
+      name: docker 0.5cpu/512m
       vcpu: 0.5
-      ram_mb: 256
+      ram_mb: 512
       disk_gb: 1
       source: docker-compose.yml
     connection:
@@ -197,12 +210,12 @@ platforms:
     adapter: kuzu
     track: reference
     tier:
-      name: in-process, 256 MB buffer pool, 1 thread
+      name: in-process, 512 MB buffer pool, 1 thread
       vcpu: null          # cannot cap CPU on an in-process library
-      ram_mb: 256         # enforced via buffer_pool_size
+      ram_mb: 512         # enforced via buffer_pool_size
       disk_gb: 1
       source: graphbench/adapters/kuzu.py
     connection:
       path: ${KUZU_DB_PATH:-data/kuzu/bench.kz}
-      buffer_pool_mb: ${KUZU_BUFFER_POOL_MB:-256}
+      buffer_pool_mb: ${KUZU_BUFFER_POOL_MB:-512}
       threads: ${KUZU_THREADS:-1}

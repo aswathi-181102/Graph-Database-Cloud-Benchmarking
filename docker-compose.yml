@@ -1,5 +1,11 @@
-# The resource-matched track: every engine at 0.5 vCPU / 256 MB, CognoDB's free
+# The resource-matched track: every engine at 0.5 vCPU / 512 MB, CognoDB's free
 # c0 envelope. Tags are pinned to exact patches so a rerun is comparable.
+#
+# 512 MB, not 256. The assignment brief says the c0 tier is 256 MB; a provisioned
+# instance reports "c0 - 512 MB" in its console, twice (Specifications -> Memory,
+# and the billing line "0.5 vCPU burst - 512 MB - 1 GiB disk"). The console is the
+# authority, so these caps follow it. Capping at 256 would have handicapped every
+# comparator to half the memory the subject of the study actually gets.
 #
 # What each engine needed before it would fit, and what is not enforced:
 # docs/LOCAL_STACK.md.
@@ -10,7 +16,7 @@
 
 x-caps: &caps
   cpus: 0.5
-  mem_limit: 256m
+  mem_limit: 512m
   restart: "no"
 
 services:
@@ -24,12 +30,15 @@ services:
     environment:
       NEO4J_AUTH: neo4j/benchpass123
       # Neo4j sizes heap and page cache from host RAM, so on defaults it asks for
-      # a ~2 GB heap and is killed before it logs anything. 96m + 48m is the
-      # tightest split that boots. server.metrics.* is deliberately absent:
-      # Enterprise-only, and Community refuses to start on an unknown key.
-      NEO4J_server_memory_heap_initial__size: 96m
-      NEO4J_server_memory_heap_max__size: 96m
-      NEO4J_server_memory_pagecache_size: 48m
+      # a ~2 GB heap and is killed before it logs anything. Scaled to the 512 MB
+      # envelope: 192m heap + 128m page cache leaves ~190 MB for metaspace, code
+      # cache, thread stacks and native buffers. At 256 MB this was 96m + 48m and
+      # the container idled at 99.9% of its limit with an empty database.
+      # server.metrics.* is deliberately absent: Enterprise-only, and Community
+      # refuses to start on an unknown key.
+      NEO4J_server_memory_heap_initial__size: 192m
+      NEO4J_server_memory_heap_max__size: 192m
+      NEO4J_server_memory_pagecache_size: 128m
       NEO4J_dbms_usage__report_enabled: "false"
       NEO4J_server_bolt_thread__pool__max__size: "40"
     volumes:
@@ -49,8 +58,9 @@ services:
     container_name: gb-memgraph
     command:
       # Below the container limit on purpose, so Memgraph refuses a query with an
-      # error naming it rather than being OOM-killed by the kernel.
-      - "--memory-limit=200"
+      # error naming it rather than being OOM-killed by the kernel. 440 of 512,
+      # leaving ~72 MB for the process itself.
+      - "--memory-limit=440"
       # Durability off, which is what Memgraph documents for query benchmarking.
       # A real asymmetry against Neo4j and ArangoDB, which are left durable, and it
       # is repeated next to Memgraph's numbers in the results.
@@ -83,18 +93,18 @@ services:
       ARANGO_ROOT_PASSWORD: benchpass123
     command:
       - "arangod"
-      # 64 MiB is the floor, not a preference: 32 MiB is rejected with "invalid
-      # value" and the server refuses to start. So ArangoDB cannot be tuned as
-      # tightly as the others, which is itself a result at this tier.
-      - "--rocksdb.total-write-buffer-size=67108864"
-      - "--rocksdb.write-buffer-size=8388608"
+      # 64 MiB was the floor at 256 MB: 32 MiB is rejected with "invalid value"
+      # and the server refuses to start. With 512 MB there is room to give RocksDB
+      # a fairer share, so these are doubled rather than left at the floor.
+      - "--rocksdb.total-write-buffer-size=134217728"
+      - "--rocksdb.write-buffer-size=16777216"
       - "--rocksdb.max-write-buffer-number=2"
-      - "--rocksdb.block-cache-size=33554432"
-      - "--cache.size=16777216"
+      - "--rocksdb.block-cache-size=67108864"
+      - "--cache.size=33554432"
       # Without this ArangoDB reads host RAM and sets a per-query AQL budget of
-      # ~2.4 GB, ten times the container. 128 MiB keeps an oversized query to an
-      # AQL error instead of a vanished process.
-      - "--query.memory-limit=134217728"
+      # ~2.4 GB, roughly five times the container. 256 MiB keeps an oversized query
+      # to an AQL error instead of a vanished process.
+      - "--query.memory-limit=268435456"
       - "--server.statistics=false"
       - "--foxx.queues=false"
       - "--javascript.v8-contexts=2"
@@ -122,7 +132,7 @@ services:
       # Defaults to one reader thread per core, so it would start 8 to share half
       # a core and measure scheduler contention instead of the engine.
       FALKORDB_ARGS: "THREAD_COUNT 1"
-      REDIS_ARGS: "--maxmemory 200mb --save ''"
+      REDIS_ARGS: "--maxmemory 440mb --save ''"
     volumes:
       - falkordb-data:/data
     healthcheck:

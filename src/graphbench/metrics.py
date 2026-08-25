@@ -105,6 +105,7 @@ class ThroughputResult:
     writes: int
     read_latency: LatencySeries
     write_latency: LatencySeries
+    reconnects: int = 0
 
     @property
     def total_ops(self) -> int:
@@ -122,6 +123,7 @@ class ThroughputResult:
             "writes": self.writes,
             "total_ops": self.total_ops,
             "qps": round(self.qps, 1),
+            "reconnects": self.reconnects,
             # Off by default: 40 clients x 30s is tens of thousands of samples per
             # level and would make the results file unreviewable.
             "read_latency": self.read_latency.to_dict(include_samples),

@@ -1,12 +1,12 @@
 # The capped local stack
 
 Notes from getting four engines to run inside CognoDB's free-tier envelope
-(0.5 vCPU, 256 MB RAM). Kept because the tuning is part of the methodology: if
+(0.5 vCPU, 512 MB RAM). Kept because the tuning is part of the methodology: if
 an engine only fits after being configured down, the configuration is a result,
 not an implementation detail.
 
 Host: Apple M-series, 8 cores, 8 GB RAM, macOS 26.5, Docker 29.7.2 (Docker
-Desktop, aarch64). Every container gets `cpus: 0.5` and `mem_limit: 256m` from
+Desktop, aarch64). Every container gets `cpus: 0.5` and `mem_limit: 512m` from
 one shared YAML anchor.
 
 ## Does everything even boot?
@@ -19,7 +19,7 @@ and the thing the actual benchmark answers.
 Idle RSS measured with `docker stats --no-stream` after the container reported
 healthy and before any data was loaded:
 
-| Engine | Version | Idle RSS | % of 256 MB | Boot time to healthy |
+| Engine | Version | Idle RSS | % of 512 MB | Boot time to healthy |
 |---|---|---|---|---|
 | Memgraph | 3.12.0 | 72.8 MiB | 28% | ~15 s |
 | FalkorDB | v4.20.4 | 79.8 MiB | 31% | ~10 s |
@@ -36,7 +36,7 @@ Neo4j number in the results has to be read with that in mind.
 
 None of them fit on defaults, because all of them size themselves from host RAM
 rather than from the cgroup limit. That is the common thread and it is worth
-saying out loud: on a 256 MB container with 8 GB visible on the host, every one
+saying out loud: on a 512 MB container with 8 GB visible on the host, every one
 of these engines guesses wrong in the same direction.
 
 **Neo4j** computes heap and page cache from host RAM, so it asked for roughly a

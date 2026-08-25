@@ -117,6 +117,15 @@ class Adapter(ABC):
     def wipe(self) -> None:
         """Leave the database empty. Called before every load."""
 
+    def reset_connection(self) -> None:
+        """Drop cached connection state so the next call reconnects.
+
+        Default no-op. Transports that cache a session override it. Needed because
+        a dropped socket means two different things: a local engine that OOMed and
+        is gone, or a cloud engine on the other side of an ocean that lost a packet.
+        """
+        return
+
     @abstractmethod
     def create_indexes(self) -> list[str]:
         """Create the index set, returning descriptions of what was actually made.

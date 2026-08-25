@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 from graphbench.adapters.base import Adapter
 from graphbench.config import Workloads
+from graphbench.errors import is_connection_error
 from graphbench.metrics import LatencySeries, ThroughputResult, Timer
 
 # Split of the read share between point lookup and 2-hop. Not per-platform.
@@ -52,7 +53,7 @@ def _run_level(adapter: Adapter, workloads: Workloads, tag: str, clients: int) -
     keys = adapter.graph.start_keys
     read_latency = LatencySeries()
     write_latency = LatencySeries()
-    counters = {"reads": 0, "writes": 0}
+    counters = {"reads": 0, "writes": 0, "reconnects": 0}
 
     # Merge only, never in the hot loop: a shared lock there would serialise the
     # clients and the throughput number would describe my mutex.
@@ -68,7 +69,7 @@ def _run_level(adapter: Adapter, workloads: Workloads, tag: str, clients: int) -
         local_reads: list[float] = []
         local_writes: list[float] = []
         local_errors: list[str] = []
-        reads = writes = 0
+        reads = writes = reconnects = 0
         seq = 0
 
         start_gate.wait()
@@ -92,6 +93,11 @@ def _run_level(adapter: Adapter, workloads: Workloads, tag: str, clients: int) -
                     writes += 1
             except Exception as exc:  # noqa: BLE001
                 local_errors.append(f"{type(exc).__name__}: {exc}")
+                if is_connection_error(exc):
+                    # This worker's session is defunct, so without a reset every
+                    # remaining op in it fails on the same dead socket.
+                    adapter.reset_connection()
+                    reconnects += 1
                 if len(local_errors) > 50:
                     break  # not coming back; stop hammering it
 
@@ -101,6 +107,7 @@ def _run_level(adapter: Adapter, workloads: Workloads, tag: str, clients: int) -
             read_latency.errors.extend(local_errors[:5])
             counters["reads"] += reads
             counters["writes"] += writes
+            counters["reconnects"] += reconnects
 
     threads = [threading.Thread(target=worker, args=(i,), daemon=True) for i in range(clients)]
     for t in threads:
@@ -117,7 +124,7 @@ def _run_level(adapter: Adapter, workloads: Workloads, tag: str, clients: int) -
         t.join(timeout=workloads.timeout_s + 30)
     elapsed = time.perf_counter() - began
 
-    return ThroughputResult(
+    result = ThroughputResult(
         concurrency=clients,
         duration_s=elapsed,
         reads=counters["reads"],
@@ -125,6 +132,8 @@ def _run_level(adapter: Adapter, workloads: Workloads, tag: str, clients: int) -
         read_latency=read_latency,
         write_latency=write_latency,
     )
+    result.reconnects = counters["reconnects"]
+    return result
 
 
 # Fixed so the read/write interleaving is identical across platforms and reruns.
