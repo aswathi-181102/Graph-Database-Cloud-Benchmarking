@@ -5,6 +5,7 @@ every sample. Same shape everywhere, driven from one config. Failures are counte
 rather than raised. See docs/DECISIONS.md sections 6, 7 and 9.
 """
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -57,9 +58,23 @@ class ReadResult:
 
 
 # A cloud platform 240ms away will lose a connection occasionally, and that is not
-# the same event as an engine running out of memory. Beyond this many, something is
-# actually wrong and the workload is abandoned.
-MAX_RECONNECTS = 10
+# the same event as an engine running out of memory. Beyond this many, the platform
+# is genuinely unstable rather than unlucky, and the workload is abandoned.
+MAX_RECONNECTS = 25
+
+# Attempts per iteration, and how long to wait before each retry.
+#
+# One retry with no wait was not enough, and the reason is visible in the data. A
+# CognoDB 3-hop query ran 8,975ms and killed the connection; the next five queries
+# then failed within 500ms each regardless of start-node degree, before the sixth
+# recovered and completed in 17.7s. A dropped connection there is not one bad
+# iteration, it is a short cascade, so an immediate single retry lands inside the
+# cascade and abandons a workload that would have finished.
+#
+# Engine-neutral on purpose: every platform gets the same policy, and the retry
+# count goes into the results so a row that needed 12 of them is visibly different
+# from one that needed none.
+RETRY_BACKOFF_S = (0.0, 0.5, 2.0)
 
 
 def run_read_workload(
@@ -87,7 +102,7 @@ def run_read_workload(
 
     def should_retry(exc: BaseException, attempt: int) -> bool:
         """Worth another go through a fresh connection, or genuinely over?"""
-        if attempt != 1 or adapter is None:
+        if attempt >= len(RETRY_BACKOFF_S) or adapter is None:
             return False
         if not is_connection_error(exc) or _is_memory_error(exc):
             return False
@@ -95,6 +110,9 @@ def run_read_workload(
             return False
         result.reconnects += 1
         adapter.reset_connection()
+        # Wait before the next attempt. Retrying instantly just lands inside the
+        # same cascade that caused the first failure.
+        time.sleep(RETRY_BACKOFF_S[attempt])
         return True
 
     # First call is kept separately: it carries plan compilation and index warm-up.
@@ -104,7 +122,7 @@ def run_read_workload(
     # Warm-up gets the same reconnect tolerance as the measured loop, or one dropped
     # packet here would abandon the workload before measurement even began.
     for i in range(workloads.warmup):
-        for attempt in (1, 2):
+        for attempt in range(1, len(RETRY_BACKOFF_S) + 1):
             try:
                 _, _, elapsed_ms = deadline.run(lambda i=i: timed(i))
                 if i == 0:
@@ -132,7 +150,7 @@ def run_read_workload(
         # could fix. Without this a single lost packet on a long link discards the
         # other 99 iterations, and the missing row reads as "this engine cannot run
         # this query" rather than "the internet hiccuped".
-        for attempt in (1, 2):
+        for attempt in range(1, len(RETRY_BACKOFF_S) + 1):
             try:
                 index = workloads.warmup + i
                 value, check_key, elapsed_ms = deadline.run(lambda i=index: timed(i))

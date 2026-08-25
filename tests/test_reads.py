@@ -222,17 +222,30 @@ def test_an_out_of_memory_error_is_not_retried(workloads):
     assert flaky.resets == 0
 
 
-def test_a_genuinely_dead_connection_abandons_after_one_retry(workloads):
-    """If the reconnect also fails, the connection is really gone, so give up then
-    rather than flapping MAX_RECONNECTS times against a dead endpoint."""
+def test_a_genuinely_dead_connection_abandons_after_exhausting_its_retries(workloads):
+    """Every attempt fails, so it gives up after the backoff schedule is spent rather
+    than flapping MAX_RECONNECTS times against a dead endpoint."""
     flaky = Flaky(
         drop_at=range(1, 500), error=RuntimeError("Failed to read from defunct connection")
     )
     result = reads.run_read_workload("x", flaky.call, workloads, adapter=flaky)
 
     assert result.abandoned
-    assert result.reconnects == 1
+    assert result.reconnects == len(reads.RETRY_BACKOFF_S) - 1
     assert len(result.latency) == 0
+
+
+def test_a_short_cascade_of_failures_is_survived(workloads):
+    """The real shape from CognoDB: one long query kills the connection and the next
+    few fail fast before it recovers. Retrying once lands inside the cascade."""
+    flaky = Flaky(
+        drop_at=[5, 6], error=RuntimeError("Failed to read from defunct connection")
+    )
+    result = reads.run_read_workload("x", flaky.call, workloads, adapter=flaky)
+
+    assert not result.abandoned
+    assert result.reconnects == 2
+    assert len(result.latency) == workloads.iterations
 
 
 def test_intermittent_drops_are_capped_across_the_workload(workloads):

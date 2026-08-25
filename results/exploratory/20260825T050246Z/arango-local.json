@@ -1,0 +1,36 @@
+{
+  "platform": {
+    "id": "arango-local",
+    "display": "ArangoDB (capped)",
+    "engine": "arangodb",
+    "track": "local",
+    "tier": {
+      "name": "docker 0.5cpu/512m",
+      "vcpu": 0.5,
+      "ram_mb": 512,
+      "disk_gb": 1,
+      "burstable": false,
+      "notes": "",
+      "source": "docker-compose.yml"
+    }
+  },
+  "dataset": {
+    "name": "ca-astroph",
+    "nodes": 18771,
+    "edges": 198050,
+    "raw_sha256": "51bf1e2cace269b884481a8502474efa67c0fd01d998ff7f5a154d7d3e527f27"
+  },
+  "status": "failed",
+  "errors": [
+    "reset skipped: docker daemon is not reachable",
+    "ConnectionAbortedError: Can't connect to host(s) within limit (3)"
+  ],
+  "started_at": "2026-08-25T05:11:12+00:00",
+  "reset": {
+    "reset": false,
+    "reason": "docker daemon is not reachable"
+  },
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/src/graphbench/runner.py\", line 122, in run_platform\n    adapter.connect()\n    ~~~~~~~~~~~~~~~^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/src/graphbench/adapters/arango.py\", line 40, in connect\n    self._ensure_collections(db)\n    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/src/graphbench/adapters/arango.py\", line 61, in _ensure_collections\n    if not db.has_collection(name):\n           ~~~~~~~~~~~~~~~~~^^^^^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/arango/database.py\", line 1557, in has_collection\n    return self._execute(request, response_handler)\n           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/arango/api.py\", line 74, in _execute\n    return self._executor.execute(request, response_handler)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/arango/executor.py\", line 66, in execute\n    resp = self._conn.send_request(request)\nConnectionAbortedError: Can't connect to host(s) within limit (3)\n",
+  "finished_at": "2026-08-25T05:11:30+00:00",
+  "duration_s": 18.5
+}

@@ -24,4 +24,11 @@ looked like before they were found:
   was being reported as an engine that could not run the query. Superseded by the
   run that follows the fix.
 
-The published runs are the 5-platform and 6-platform ones in `results/`.
+- `20260825T050246Z` - the Docker daemon died right after CognoDB finished, so all
+  four capped engines failed with connection refused. Kept because it shows the
+  harness surviving an infrastructure failure: each platform recorded its real
+  error, the run continued, verification still ran on what it had, and a valid
+  run.json came out. Also the first run where CognoDB completed every workload,
+  which is what confirmed the reconnect fix.
+
+The published runs are the ones in `results/`.

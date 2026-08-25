@@ -1,0 +1,36 @@
+{
+  "platform": {
+    "id": "memgraph-local",
+    "display": "Memgraph (capped)",
+    "engine": "memgraph",
+    "track": "local",
+    "tier": {
+      "name": "docker 0.5cpu/512m",
+      "vcpu": 0.5,
+      "ram_mb": 512,
+      "disk_gb": 1,
+      "burstable": false,
+      "notes": "",
+      "source": "docker-compose.yml"
+    }
+  },
+  "dataset": {
+    "name": "ca-astroph",
+    "nodes": 18771,
+    "edges": 198050,
+    "raw_sha256": "51bf1e2cace269b884481a8502474efa67c0fd01d998ff7f5a154d7d3e527f27"
+  },
+  "status": "failed",
+  "errors": [
+    "reset skipped: docker daemon is not reachable",
+    "ServiceUnavailable: Couldn't connect to localhost:7688 (resolved to ('[::1]:7688', '127.0.0.1:7688')):\nFailed to establish connection to ResolvedIPv6Address(('::1', 7688, 0, 0)) (reason [Errno 61] Connection refused)\nFailed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7688)) (reason [Errno 61] Connection refused)"
+  ],
+  "started_at": "2026-08-25T05:11:11+00:00",
+  "reset": {
+    "reset": false,
+    "reason": "docker daemon is not reachable"
+  },
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/neo4j/_async_compat/network/_bolt_socket.py\", line 468, in _connect_secure\n    s.connect(resolved_address)\n    ~~~~~~~~~^^^^^^^^^^^^^^^^^^\nConnectionRefusedError: [Errno 61] Connection refused\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/neo4j/_sync/io/_bolt_socket.py\", line 328, in connect\n    s = cls._connect_secure(\n        resolved_address,\n    ...<3 lines>...\n        ssl_context,\n    )\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/neo4j/_async_compat/network/_bolt_socket.py\", line 485, in _connect_secure\n    raise ServiceUnavailable(\n    ...<2 lines>...\n    ) from error\nneo4j.exceptions.ServiceUnavailable: Failed to establish connection to ResolvedIPv6Address(('::1', 7688, 0, 0)) (reason [Errno 61] Connection refused)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/src/graphbench/runner.py\", line 122, in run_platform\n    adapter.connect()\n    ~~~~~~~~~~~~~~~^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/src/graphbench/adapters/bolt.py\", line 50, in connect\n    self._driver.verify_connectivity()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/neo4j/_sync/driver.py\", line 1090, in verify_connectivity\n    self._get_server_info(session_config)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/neo4j/_sync/driver.py\", line 1305, in _get_server_info\n    return session._get_server_info()\n           ~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/neo4j/_sync/work/session.py\", line 183, in _get_server_info\n    self._connect(\n    ~~~~~~~~~~~~~^\n        READ_ACCESS, liveness_check_timeout=0, unprepared=True\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Users/spiceblue/WorkSpace/aswathi/Graph-Database-Cloud-Benchmarking/.venv/lib/python3.13/site-packages/neo4j/_sync/work/session.py\", line 136, in _connect\n    super()._connect(\n    ~~~~~~~~~~~~~~~~^\n        access_mode, auth=self._config.auth, **acquire_kwargs\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\nneo4j.exceptions.ServiceUnavailable: Couldn't connect to localhost:7688 (resolved to ('[::1]:7688', '127.0.0.1:7688')):\nFailed to establish connection to ResolvedIPv6Address(('::1', 7688, 0, 0)) (reason [Errno 61] Connection refused)\nFailed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7688)) (reason [Errno 61] Connection refused)\n",
+  "finished_at": "2026-08-25T05:11:12+00:00",
+  "duration_s": 0.3
+}
