@@ -11,6 +11,7 @@ from typing import Any
 
 from graphbench.adapters.base import Adapter
 from graphbench.config import Workloads
+from graphbench.deadline import Deadline, QueryTimeout
 from graphbench.errors import is_connection_error, is_resource_error
 from graphbench.metrics import LatencySeries, Timer
 
@@ -74,6 +75,15 @@ def run_read_workload(
     index in lets each workload decide whether it rotates start keys or repeats.
     """
     result = ReadResult(name=name, expected=expected, iterations_requested=workloads.iterations)
+    # One per workload: a timeout poisons it, and the next workload then gets a fresh
+    # thread and a fresh session, which is what you want after a hang.
+    deadline = Deadline(workloads.timeout_s)
+
+    def timed(index: int):
+        """Timer inside the worker, so submit/join overhead is not charged to the db."""
+        with Timer() as t:
+            value, check_key = call(index)
+        return value, check_key, t.elapsed_ms
 
     def should_retry(exc: BaseException, attempt: int) -> bool:
         """Worth another go through a fresh connection, or genuinely over?"""
@@ -96,17 +106,24 @@ def run_read_workload(
     for i in range(workloads.warmup):
         for attempt in (1, 2):
             try:
-                with Timer() as t:
-                    call(i)
+                _, _, elapsed_ms = deadline.run(lambda i=i: timed(i))
                 if i == 0:
-                    result.first_call_ms = round(t.elapsed_ms, 3)
+                    result.first_call_ms = round(elapsed_ms, 3)
                 break
+            except QueryTimeout as exc:
+                # fail(timed_out=True) is what counts it; bumping timeouts here as
+                # well double-counted.
+                result.latency.fail(exc, timed_out=True)
+                result.abandoned = True
+                deadline.close()
+                return result
             except Exception as exc:  # noqa: BLE001
                 if should_retry(exc, attempt):
                     continue
                 result.latency.fail(exc)
                 if _is_fatal(exc):
                     result.abandoned = True
+                    deadline.close()
                     return result
                 break
 
@@ -117,19 +134,19 @@ def run_read_workload(
         # this query" rather than "the internet hiccuped".
         for attempt in (1, 2):
             try:
-                with Timer() as t:
-                    value, check_key = call(workloads.warmup + i)
-                result.latency.add(t.elapsed_ms)
+                index = workloads.warmup + i
+                value, check_key, elapsed_ms = deadline.run(lambda i=index: timed(i))
+                result.latency.add(elapsed_ms)
                 result.checks.setdefault(check_key, value)
-
-                if t.elapsed_ms / 1000.0 > workloads.timeout_s:
-                    # Not cancelled (no portable client-side cancel here), but no
-                    # further iterations are issued and it is recorded as a timeout
-                    # rather than folded into the percentiles.
-                    result.latency.timeouts += 1
-                    result.abandoned = True
-                    return result
                 break
+            except QueryTimeout as exc:
+                # Abandoned, not cancelled: the query is still running on the server.
+                # Recorded as a timeout rather than folded into the percentiles as an
+                # ordinary sample.
+                result.latency.fail(exc, timed_out=True)
+                result.abandoned = True
+                deadline.close()
+                return result
             except Exception as exc:  # noqa: BLE001
                 if should_retry(exc, attempt):
                     continue
@@ -137,9 +154,11 @@ def run_read_workload(
                 result.latency.fail(exc)
                 if _is_fatal(exc):
                     result.abandoned = True
+                    deadline.close()
                     return result
                 break
 
+    deadline.close()
     return result
 
 

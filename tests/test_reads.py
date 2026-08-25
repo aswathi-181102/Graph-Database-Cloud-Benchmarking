@@ -74,18 +74,29 @@ def test_a_dead_connection_abandons_during_warmup(workloads):
     assert len(result.latency) == 0
 
 
-def test_overrunning_the_ceiling_records_a_timeout_and_stops(workloads):
+def test_a_hung_call_is_cut_off_at_the_ceiling(workloads):
+    """The ceiling used to be checked after the call returned, which enforces nothing
+    when the call never returns. One stalled CognoDB request cost a 17 minute hang."""
     import time
 
+    calls = {"n": 0}
+
     def call(i):
-        time.sleep(0.05)
+        calls["n"] += 1
+        if calls["n"] == 4:
+            time.sleep(30)
         return 1, "value"
 
-    result = run("x", call, replace(workloads, timeout_s=0, warmup=0))
+    began = time.perf_counter()
+    result = run("x", call, replace(workloads, timeout_s=0.2, warmup=1))
+    elapsed = time.perf_counter() - began
+
+    assert elapsed < 5, "did not return promptly, so the ceiling is not enforced"
     assert result.abandoned
     assert result.latency.timeouts == 1
-    # the overrun is not folded into the percentiles as an ordinary sample
-    assert len(result.latency) == 1
+    # the samples collected before the hang are kept
+    assert len(result.latency) == 2
+    assert "per-query ceiling" in result.latency.errors[0]
 
 
 def test_expected_value_mismatch_is_recorded(workloads):
